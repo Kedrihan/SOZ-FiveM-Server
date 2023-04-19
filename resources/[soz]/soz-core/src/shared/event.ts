@@ -223,6 +223,8 @@ export enum ServerEvent {
     CRIMI_HOOD = 'soz-core:server:crimi:hood',
     CRIMI_UNHOOD = 'soz-core:server:crimi:unhood',
     CRIMI_SMOKE_STRESS = 'soz-core:server:crimi:smoke-stress',
+
+    
 }
 
 export enum ClientEvent {
@@ -381,6 +383,10 @@ export enum ClientEvent {
     CRIMI_SMOKE = 'soz-core:server:crimi:smoke',
 
     EASTER_EAR_TOGGLE = 'soz-core:server:easter:toogle-ear',
+
+    BANK_ENTER_LOCATION = 'locations:zone:enter',
+    BANK_EXIT_LOCATION = 'locations:zone:exit',
+    
 }
 
 export enum GameEvent {
@@ -565,4 +571,7 @@ export enum NuiEvent {
     TaxiSetMission = 'soz-core:client:taxi:set-mission',
     TaxiSetHorodateur = 'soz-core:client:taxi:set-horodateur',
     TaxiDisplayHorodateur = 'soz-core:client:taxi:display-horodateur',
+
+    BankDeposit = 'soz-core:client:bank:deposit',
+    BankWithdraw = 'soz-core:client:bank:withdraw',
 }

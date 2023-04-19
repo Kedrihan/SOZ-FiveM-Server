@@ -95,6 +95,9 @@ export enum RpcServerEvent {
     BIN_IS_NOT_LOCKED = 'soz-core:server:bin:is-locked',
 
     LSMC_GET_CURRENT_ORGAN = 'soz-core:server:lsmc:get-organ',
+
+    BANK_GET_MONEY = 'soz-core:server:bank:getBankMoney',
+    ATM_GET_MONEY = 'soz-core:server:bank:getAtmMoney',
 }
 
 export enum RpcClientEvent {

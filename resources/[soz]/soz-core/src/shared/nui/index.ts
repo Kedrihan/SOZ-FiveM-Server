@@ -7,6 +7,7 @@ import { NuiTalentMethodMap } from '@public/shared/nui/talent';
 import { NuiAdminPlayerSubMenuMethodMap } from '../../nui/components/Admin/PlayerSubMenu';
 import { NuiAdminSkinSubMenuMethodMap } from '../../nui/components/Admin/SkinSubMenu';
 import { NuiAudioMethodMap } from './audio';
+import { NuiBankMethodMap } from './bank';
 import { NuiBennysOrderMenuMethodMap } from './bennys_order_menu';
 import { NuiClipboardMethodMap } from './clipboard';
 import { NuiFfsRecipeBookMethodMap } from './ffs_recipe_book';
@@ -43,6 +44,7 @@ export interface NuiMethodMap {
     panel: NuiPanelMethodMap;
     talent: NuiTalentMethodMap;
     repair: NuiRepairMethodMap;
+    bank: NuiBankMethodMap;
     missive: NuiMissiveMethodMap;
     police: NuiPoliceMethodMap;
     crafting: NuiCraftingMethodMap;

@@ -5,7 +5,7 @@ import { Err, Ok, Result } from '@public/shared/result';
 @Injectable()
 export class BankService {
     public transferBankMoney(source: string, target: string, amount: number): Promise<Result<boolean, string>> {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
             exports['soz-bank'].TransferMoney(source, target, amount, (success, reason) => {
                 if (success) {
                     resolve(Ok(true));
@@ -17,7 +17,7 @@ export class BankService {
     }
 
     public transferCashMoney(source: string, target: number, amount: number): Promise<Result<boolean, string>> {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
             exports['soz-bank'].TransferCashMoney(source, target, amount, (success, reason) => {
                 if (success) {
                     resolve(Ok(true));
