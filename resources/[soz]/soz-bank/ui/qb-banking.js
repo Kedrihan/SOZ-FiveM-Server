@@ -98,6 +98,7 @@ function dynamicSort(property) {
 function populateBanking(data) {
     $('#withdrawAmount').val('');
     $("#customerName").html(data.name);
+    
     $("#currentBalance").html(data.bankbalance);
     $("#currentCashBalance").html(data.money);
     $("#currentBalance1").html(data.bankbalance);
