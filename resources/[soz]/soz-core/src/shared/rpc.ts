@@ -98,6 +98,7 @@ export enum RpcServerEvent {
 
     BANK_GET_MONEY = 'soz-core:server:bank:getBankMoney',
     ATM_GET_MONEY = 'soz-core:server:bank:getAtmMoney',
+    BANK_GET_TERMINAL_TYPE = 'soz-core:server:bank:getTerminalType',
 }
 
 export enum RpcClientEvent {
