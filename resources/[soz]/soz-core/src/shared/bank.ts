@@ -45,9 +45,10 @@ export type BankAccount = {
     label: string;
     type: string;
     owner: string;
-    money: number;
-    marked_money: number;
-    coords: Vector3;
-    changed: boolean;
-    time: number;
+    money: number | bigint;
+    marked_money: number | bigint;
+    coords?: Vector3;
+    changed?: boolean;
+    time?: number;
+    max?: number;
 };

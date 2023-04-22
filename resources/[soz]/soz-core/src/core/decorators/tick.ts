@@ -1,3 +1,4 @@
+import { PayCheckTimeOut } from '@public/config/bank';
 import { setMethodMetadata } from './reflect';
 
 export const TickMetadataKey = 'soz_core.decorator.on_tick';
@@ -11,6 +12,7 @@ export enum TickInterval {
     EVERY_15_MINUTE = 900000,
     EVERY_30_MINUTE = 1800000,
     EVERY_HOUR = 3600000,
+    PAYCHECK_INTERVAL = PayCheckTimeOut * 60 * 1000,
 }
 
 export type TickMetadata = {
