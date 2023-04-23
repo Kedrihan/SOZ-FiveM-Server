@@ -22,7 +22,7 @@ export class BankAccountService {
     }
     public Accounts: BankAccount[] = [];
 
-    public createAccount(id: string, label: string, account_type: string, owner: string, money: number | bigint = 0, marked_money: number | bigint = 0, coords = null) {
+    public createAccount(id: string, label: string, account_type: string, owner: string, money: number = 0, marked_money: number = 0, coords = null) {
         if (this.AccountType[account_type] === undefined) {
             console.log("Account type not valid !")
             return

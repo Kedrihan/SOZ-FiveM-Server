@@ -34,26 +34,26 @@ export class BankAccountProvider {
         const AtmNotLoaded = { ...AtmLocations };
         for (const account of allAccounts) {
             if (account.account_type === "player") {
-                this.bankAccountService.createAccount(account.accountid, account.citizenid, account.account_type, account.citizenid, account.money)
+                this.bankAccountService.createAccount(account.accountid, account.citizenid, account.account_type, account.citizenid, Number(account.money))
             }
             else if (account.account_type === "business") {
                 this.bankAccountService.createAccount(account.businessid, allJobs[account.businessid].label, account.account_type, account.businessid,
-                    account.money)
+                    Number(account.money))
                 EnterpriseAccountNotLoaded[account.businessid] = null
             }
             else if (account.account_type === "safestorages") {
-                if (account.houseid) { this.bankAccountService.createAccount(account.houseid, account.houseid, "house_safe", account.houseid, account.money, account.marked_money) }
+                if (account.houseid) { this.bankAccountService.createAccount(account.houseid, account.houseid, "house_safe", account.houseid, Number(account.money), Number(account.marked_money)) }
                 else {
                     this.bankAccountService.createAccount(account.businessid, SafeStorages[account.businessid].label, account.account_type,
-                        account.businessid, account.money, account.marked_money)
+                        account.businessid, Number(account.money), Number(account.marked_money))
                     EnterpriseSafeNotLoaded[account.businessid] = null
                 }
             }
             else if (account.account_type === "offshore") {
-                this.bankAccountService.createAccount(account.businessid, account.businessid, account.account_type, account.businessid, account.money, account.marked_money)
+                this.bankAccountService.createAccount(account.businessid, account.businessid, account.account_type, account.businessid, Number(account.money), Number(account.marked_money))
             }
             else if (account.account_type === "bank_atm") {
-                this.bankAccountService.createAccount(account.businessid, account.businessid, account.account_type, account.businessid, account.money, account.marked_money, account.coords)
+                this.bankAccountService.createAccount(account.businessid, account.businessid, account.account_type, account.businessid, Number(account.money), Number(account.marked_money), account.coords)
                 if (account.businessid.match("bank_%w+")) {
                     const bank = account.businessid.match("%a+%d")[0]
                     BankNotLoaded[bank] = null
