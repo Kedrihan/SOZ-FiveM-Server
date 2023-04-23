@@ -16,6 +16,7 @@ import { Vector2, Vector3 } from './polyzone/vector';
 export type SocietyTax = {
     privateSociety: Record<string, string[]>;
     taxRepartition: Record<string, number>;
+    thresholds: Record<number, number>;
 };
 export type AtmLocation = {
     accountId: string;

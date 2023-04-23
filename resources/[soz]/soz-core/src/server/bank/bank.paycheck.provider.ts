@@ -6,6 +6,7 @@ import { Tick, TickInterval } from '@public/core/decorators/tick';
 import { QBCore } from '../qbcore';
 import { Notifier } from '../notifier';
 import { BankAccountService } from './bank.account.service';
+import { Monitor } from '@public/shared/monitor';
 
 @Provider()
 export class BankPaycheckProvider {
@@ -21,6 +22,9 @@ export class BankPaycheckProvider {
 
     @Inject(QBCore)
     private qbCore: QBCore;
+
+    @Inject(Monitor)
+    private monitor: Monitor;
 
     @Tick(TickInterval.PAYCHECK_INTERVAL)
     public async onTick() {
@@ -38,11 +42,10 @@ export class BankPaycheckProvider {
                 this.bankAccountService.transferMoney(player.PlayerData.job.id, player.PlayerData.charinfo.account, payment, (success, reason) => {
                     if (success) {
                         this.notifier.advancedNotify(playerSource, 'Maze Banque', 'Mouvement bancaire', 'Un versement vient d\'être réalisé sur votre compte', 'CHAR_BANK_MAZE', 'success');
-                        TriggerEvent("monitor:server:event", "paycheck",
+                        this.monitor.publish("paycheck",
                             {
                                 player_source: player.PlayerData.source
                             },
-
                             {
                                 amount: payment,
                             });

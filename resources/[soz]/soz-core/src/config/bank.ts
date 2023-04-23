@@ -57,6 +57,12 @@ export const SocietyTaxes: SocietyTax = {
         upw: ['upw', 'safe_upw'],
     },
     taxRepartition: { lspd: 30, bcso: 30, lsmc: 30, 'cash-transfer': 2, mdr: 8 },
+    thresholds: {
+        1000000: 4,
+        2000000: 8,
+        4000000: 12,
+        6000000: 16,
+    },
 };
 export const SafeStorages: Record<string, JobSafe> = {
     'safe_cash-transfer': {
