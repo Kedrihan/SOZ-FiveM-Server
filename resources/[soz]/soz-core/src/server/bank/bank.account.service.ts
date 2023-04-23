@@ -11,7 +11,7 @@ import { SafeStorageAccount } from './accounts/bank.account.safe';
 
 @Injectable()
 export class BankAccountService {
-    public AccountType = {
+    private AccountType: Record<string, any> = {
         "player": new PlayerAccount(),
         "business": new BusinessAccount(),
         "safestorages": new SafeStorageAccount(),
@@ -20,7 +20,7 @@ export class BankAccountService {
         "farm": new FarmAccount(),
         "house_safe": new HouseSafeAccount()
     }
-    public Accounts: BankAccount[] = [];
+    private Accounts: BankAccount[] = [];
 
     public createAccount(id: string, label: string, account_type: string, owner: string, money: number = 0, marked_money: number = 0, coords = null) {
         if (this.AccountType[account_type] === undefined) {
@@ -91,12 +91,8 @@ export class BankAccountService {
         return true;
     }
 
-    public removeMoney(acc: any, money: number, money_type: string | null = null): [boolean, string] | boolean {
+    public removeMoney(acc: any, money: number, money_type: string = "money"): [boolean, string] | boolean {
         const account = this.getAccount(acc);
-
-        if (money_type === null) {
-            money_type = "money";
-        }
 
         if (account[money_type] - money >= 0) {
             account[money_type] = Math.ceil(account[money_type] - money - 0.5);
@@ -211,6 +207,14 @@ export class BankAccountService {
 
             return this.Accounts[arg]
         }
+    }
+
+    public getAllAccounts(): BankAccount[] {
+        return this.Accounts;
+    }
+
+    public getAllAccountTypes(): Record<string, any> {
+        return this.AccountType;
     }
 
 }

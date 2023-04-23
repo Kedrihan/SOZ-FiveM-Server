@@ -17,7 +17,7 @@ export class BankWashMoneyProvider {
     }
 
     private washMoney() {
-        const offshoreAccounts = this.bankAccountService.Accounts.filter(account => account.id.includes("offshore_"));
+        const offshoreAccounts = this.bankAccountService.getAllAccounts().filter(account => account.id.includes("offshore_"));
         const maxWashAmount = Math.ceil((OffShoreMaxWashAmount / offshoreAccounts.length) - 0.5);
 
         for (const account of offshoreAccounts) {

@@ -6,13 +6,18 @@ import { Provider } from '../../core/decorators/provider';
 import { Rpc } from '../../core/decorators/rpc';
 import { DrivingSchoolConfig, DrivingSchoolLicenseType } from '../../shared/driving-school';
 import { ClientEvent, ServerEvent } from '../../shared/event';
-import { Vector3, Vector4 } from '../../shared/polyzone/vector';
+import { Vector3, Vector4, getDistance } from '../../shared/polyzone/vector';
 import { RpcServerEvent } from '../../shared/rpc';
 import { PrismaService } from '../database/prisma.service';
 import { Notifier } from '../notifier';
 import { PlayerMoneyService } from '../player/player.money.service';
 import { PlayerService } from '../player/player.service';
 import { VehicleSpawner } from '../vehicle/vehicle.spawner';
+import { AtmMinimalInformation, BankAccount } from '@public/shared/bank';
+import { BankAccountService } from './bank.account.service';
+import { AtmLocations, BankPedLocations } from '@public/config/bank';
+import { QBCore } from '../qbcore';
+import { OnEvent } from '../../core/decorators/event';
 
 @Provider()
 export class BankAtmProvider {
@@ -22,140 +27,133 @@ export class BankAtmProvider {
     @Inject(PlayerService)
     private playerService: PlayerService;
 
-    @Inject(PlayerMoneyService)
-    private playerMoneyService: PlayerMoneyService;
+    @Inject(QBCore)
+    private qbCore: QBCore;
+
+    @Inject(BankAccountService)
+    private bankAccountService: BankAccountService;
 
     @Inject(PrismaService)
     private prismaService: PrismaService;
 
-    @Inject(VehicleSpawner)
-    private vehicleSpawner: VehicleSpawner;
-
-    @On(ServerEvent.DRIVING_SCHOOL_PLAYER_PAY)
-    public makePlayerPay(source: number, licenseType: DrivingSchoolLicenseType, spawnPoint: Vector4) {
-        const lData = DrivingSchoolConfig.licenses[licenseType];
-        if (!lData || typeof lData.price !== 'number') {
-            return;
-        }
-
-        if (!this.playerMoneyService.remove(source, lData.price)) {
-            this.notifier.notify(source, "Vous n'avez pas assez d'argent", 'error');
-            return;
-        }
-
-        TriggerClientEvent(ClientEvent.DRIVING_SCHOOL_SETUP_EXAM, source, licenseType, spawnPoint);
-    }
-
     @Rpc(RpcServerEvent.ATM_GET_MONEY)
-    public async getAtmMoney(source: number, atmType: string, coords: number[]) {
-
-        return await this.vehicleSpawner.spawnTemporaryVehicle(source, model);
-    }
-    private GetAtmAccount(atmType: string, coords: number[]) {
-        const coordsHash = GetAtmHashByCoords(coords)
-        const accountName = GetAtmAccountName(atmType, coordsHash, coords)
-        return GetOrCreateAccount(accountName, coords)
+    public async getAtmMoney(source: number, atmType: string, coords: Vector3): Promise<number> {
+        const [account] = this.getAtmAccount(atmType, coords);
+        return account.money;
     }
 
-    public
-    /**
-     *     local function GetOrCreateAccount(accountName, coords)
-    local account, created = this.Account(accountName), false
-    if account == nil then
-        account = Account.Create(accountName, "bank-atm", "bank-atm", accountName, nil, nil, coords)
-        created = true
-    end
-    return account, created
-end
+    @Rpc(RpcServerEvent.ATM_GET_ACCOUNT)
+    public async getAtmAccountCallback(source: number, atmType: string, coords: Vector3): Promise<AtmMinimalInformation> {
+        const coordsHash = this.getAtmHashByCoords(coords);
+        const [account, created] = this.getAtmAccount(atmType, coords);
+        if (created) {
+            const allPlayersSources = this.qbCore.getPlayersSources();
+            for (const playerSource of allPlayersSources) {
+                TriggerClientEvent(ClientEvent.ATM_DISPLAY_BLIPS, playerSource, { [account.owner]: coords });
+            }
+        }
+        return { account: account.owner, name: `atm_${atmType}_${coordsHash}` }
+    }
 
+    @Rpc(RpcServerEvent.BANK_GET_ACCOUNT)
+    public async getBankAccountCallback(source: number, bank: string): Promise<string> {
+        const [account] = this.getBankAccount(bank);
+        return account.id;
+    }
 
-     * local function GetAtmAccountName(atmType, atmCoordsHash, coords)
-    local atmAccount = nil
-    local atmIdentifier = string.format("atm_%s_%s", atmType, atmCoordsHash)
+    @Rpc(RpcServerEvent.BANK_GET_MONEY)
+    public async getBankMoneyCallback(source: number, bank: string): Promise<number> {
+        const [account] = this.getBankAccount(bank);
+        return account.money;
+    }
 
-    if atmType == "ent" then
-        return atmIdentifier
-    end
-
-    if Config.AtmLocations[atmIdentifier] ~= nil then
-        atmAccount = Config.AtmLocations[atmIdentifier].accountId
-    end
-
-    if atmAccount == nil and coords then
-        atmAccount = "bank_" .. GetClosestFleeca(coords)
-    end
-
-    return atmAccount
-end
-     * 
-     * 
-     * local function GetAtmHashByCoords(coords)
-    local formattedCoords = {}
-    for _, v in pairs({"x", "y", "z"}) do
-        table.insert(formattedCoords, math.floor(coords[v] * 100) / 100)
-    end
-    return GetHashKey(table.concat(formattedCoords, "_"))
-end
-
-
-     * QBCore.Functions.CreateCallback("banking:server:getAtmMoney", function(source, cb, atmType, coords)
-    local account, _ = GetAtmAccount(atmType, coords)
-    cb(account.money)
-end)
-     */
-
-    @On(ServerEvent.DRIVING_SCHOOL_UPDATE_VEHICLE_LIMIT)
-    public async updateVehicleLimit(source: number, limit: number, price: number) {
-        if (!this.playerMoneyService.remove(source, price, 'money')) {
-            this.notifier.notify(source, "Vous n'avez pas assez d'argent", 'error');
+    @Rpc(RpcServerEvent.BANK_HAS_ENOUGH_LIQUIDITY)
+    public async hasEnoughLiquidityCallback(source: number, accountId: string, amount: number): Promise<[boolean, string]> {
+        const account = this.bankAccountService.getAccount(accountId);
+        if (account == null) {
+            this.notifier.notify(source, "Compte invalide", "error");
             return;
         }
-
-        this.playerService.setPlayerMetadata(source, 'vehiclelimit', limit);
-
-        this.notifier.notify(
-            source,
-            `Vous venez d'améliorer votre carte grise au niveau ${limit} pour $${price}`,
-            'success'
-        );
+        if (account.money < amount) {
+            return [false, "invalid_liquidity"];
+        }
+        return [true, null];
     }
 
-    @Rpc(RpcServerEvent.DRIVING_SCHOOL_CHECK_REMAINING_SLOTS)
-    public async checkRemainingSlots(source: number) {
-        const player = this.playerService.getPlayer(source);
-        if (!player) return;
+    @OnEvent(ServerEvent.BANK_REMOVE_LIQUIDITY)
+    public async removeLiquidity(source: number, accountId: string, amount: number): Promise<void> {
+        const account = this.bankAccountService.getAccount(accountId);
+        if (account == null) {
+            this.notifier.notify(source, "Compte invalide", "error");
+            return;
+        }
+        if (account.money < amount) {
+            this.notifier.notify(source, "Pas assez d'argent", "error");
+            return;
+        }
+        account.money -= amount;
+        this.bankAccountService.removeMoney(account, amount);
+    }
 
-        const vehicleModels = (
-            await this.prismaService.vehicle.findMany({
-                select: {
-                    model: true,
-                },
-                where: {
-                    dealershipId: {
-                        not: null,
-                    },
-                    AND: {
-                        dealershipId: {
-                            not: 'cycle',
-                        },
-                    },
-                },
-            })
-        ).map(v => v.model);
-        const playerVehicleCount = await this.prismaService.playerVehicle.count({
-            where: {
-                citizenid: player.citizenid,
-                job: null,
-                state: {
-                    not: PlayerVehicleState.Destroyed,
-                },
-                vehicle: {
-                    in: vehicleModels,
-                },
-            },
-        });
-        const limit = player.metadata.vehiclelimit;
+    @OnEvent(ServerEvent.ATM_REMOVE_LIQUIDITY)
+    public async removeAtmLiquidity(source: number, atmType: string, coords: Vector3, amount: number, value: number): Promise<void> {
+        const [account] = this.getAtmAccount(atmType, coords);
+        this.bankAccountService.removeMoney(account, amount * value);
+    }
 
-        return Math.max(limit - playerVehicleCount, 0);
+    private getOrCreateAccount(accountName: string, coords: Vector3): [BankAccount, boolean] {
+        let account = this.bankAccountService.getAccount(accountName);
+        let created = false;
+        if (account == null) {
+            account = this.bankAccountService.createAccount(accountName, "bank-atm", "bank-atm", accountName, null, null, coords);
+            created = true;
+        }
+        return [account, created];
+    }
+    private getClosestFleeca(coord: Vector3): string {
+        let closestBank = null;
+        for (const [id, l] of Object.entries(BankPedLocations)) {
+            if (!id.includes("pacific")) {
+                const distance = getDistance(l, coord);
+                if (closestBank == null || distance < closestBank.distance) {
+                    closestBank = { id, distance };
+                }
+            }
+        }
+        return closestBank.id;
+    }
+    private getAtmHashByCoords(coords: Vector3): number {
+        const formattedCoords = [];
+        for (const v of coords) {
+            formattedCoords.push(Math.floor(v * 100) / 100);
+        }
+        return GetHashKey(formattedCoords.join("_"));
+    }
+
+    public getAtmAccountName(atmType: string, atmCoordsHash: number, coords: Vector3): string {
+        let atmAccount = null;
+        const atmIdentifier = `atm_${atmType}_${atmCoordsHash}`;
+        if (atmType == "ent") {
+            return atmIdentifier;
+        }
+        if (AtmLocations[atmIdentifier] != null) {
+            atmAccount = AtmLocations[atmIdentifier].accountId;
+        }
+        if (atmAccount == null && coords) {
+            atmAccount = `bank_${this.getClosestFleeca(coords)}`;
+        }
+        return atmAccount;
+    }
+    public getBankAccountName(bank: string): string {
+        return `bank_${bank}`;
+    }
+    private getAtmAccount(atmType: string, coords: Vector3): [BankAccount, boolean] {
+        const coordsHash = this.getAtmHashByCoords(coords);
+        const accountName = this.getAtmAccountName(atmType, coordsHash, coords);
+        return this.getOrCreateAccount(accountName, coords);
+    }
+    private getBankAccount(bank: string): [BankAccount, boolean] {
+        const accountName = this.getBankAccountName(bank);
+        return this.getOrCreateAccount(accountName, null);
     }
 }

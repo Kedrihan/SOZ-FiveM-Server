@@ -103,9 +103,10 @@ export class BankAccountProvider {
 
     @Tick(TickInterval.EVERY_MINUTE)
     public async saveAccounts() {
-        for (const account of this.bankAccountService.Accounts) {
+        for (const account of this.bankAccountService.getAllAccounts()) {
             if (account.changed) {
-                if (this.bankAccountService.AccountType[account.type].save(account.id, account.owner, account.money, account.marked_money)) {
+                const accountType = this.bankAccountService.getAllAccountTypes()[account.type];
+                if (accountType.save(account.id, account.owner, account.money, account.marked_money)) {
                     account.changed = false;
                 }
             }

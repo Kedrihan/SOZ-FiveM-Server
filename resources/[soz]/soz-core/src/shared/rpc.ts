@@ -97,8 +97,12 @@ export enum RpcServerEvent {
     LSMC_GET_CURRENT_ORGAN = 'soz-core:server:lsmc:get-organ',
 
     BANK_GET_MONEY = 'soz-core:server:bank:getBankMoney',
-    ATM_GET_MONEY = 'soz-core:server:bank:getAtmMoney',
+    BANK_GET_ACCOUNT = 'soz-core:server:bank:getBankAccount',
     BANK_GET_TERMINAL_TYPE = 'soz-core:server:bank:getTerminalType',
+    BANK_HAS_ENOUGH_LIQUIDITY = 'soz-core:server:bank:hasEnoughLiquidity',
+    ATM_GET_MONEY = 'soz-core:server:bank:getAtmMoney',
+    ATM_GET_ACCOUNT = 'soz-core:server:bank:getAtmAccount',
+
 }
 
 export enum RpcClientEvent {

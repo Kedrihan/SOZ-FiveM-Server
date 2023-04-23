@@ -53,3 +53,7 @@ export type BankAccount = {
     time?: number;
     max?: number;
 };
+export type AtmMinimalInformation = {
+    account: string;
+    name: string;
+};

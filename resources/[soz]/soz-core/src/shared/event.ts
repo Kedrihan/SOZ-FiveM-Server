@@ -224,7 +224,9 @@ export enum ServerEvent {
     CRIMI_UNHOOD = 'soz-core:server:crimi:unhood',
     CRIMI_SMOKE_STRESS = 'soz-core:server:crimi:smoke-stress',
 
-    
+    BANK_REMOVE_LIQUIDITY = 'soz-core:server:bank:removeLiquidity',
+    ATM_REMOVE_LIQUIDITY = 'soz-core:server:bank:removeAtmLiquidity',
+
 }
 
 export enum ClientEvent {
@@ -386,7 +388,9 @@ export enum ClientEvent {
 
     BANK_ENTER_LOCATION = 'locations:zone:enter',
     BANK_EXIT_LOCATION = 'locations:zone:exit',
-    
+
+    ATM_DISPLAY_BLIPS = 'soz-core:client:banking:displayAtmBlips',
+
 }
 
 export enum GameEvent {
