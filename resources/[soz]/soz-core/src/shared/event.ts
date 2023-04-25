@@ -225,6 +225,8 @@ export enum ServerEvent {
     CRIMI_SMOKE_STRESS = 'soz-core:server:crimi:smoke-stress',
 
     BANK_REMOVE_LIQUIDITY = 'soz-core:server:bank:removeLiquidity',
+    BANK_REFUSE_INVOICE = 'soz-core:server:bank:refuseInvoice',
+    BANK_ACCEPT_INVOICE = 'soz-core:server:bank:acceptInvoice',
     ATM_REMOVE_LIQUIDITY = 'soz-core:server:bank:removeAtmLiquidity',
 
 }

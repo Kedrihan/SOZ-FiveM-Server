@@ -102,7 +102,6 @@ export enum RpcServerEvent {
     BANK_HAS_ENOUGH_LIQUIDITY = 'soz-core:server:bank:hasEnoughLiquidity',
     ATM_GET_MONEY = 'soz-core:server:bank:getAtmMoney',
     ATM_GET_ACCOUNT = 'soz-core:server:bank:getAtmAccount',
-
 }
 
 export enum RpcClientEvent {

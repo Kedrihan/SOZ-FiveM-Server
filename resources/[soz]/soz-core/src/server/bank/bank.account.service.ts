@@ -1,6 +1,7 @@
+import { AtmLocations, BankAtmDefault, HouseSafeTiers } from '@public/config/bank';
 import { BankAccount } from '@public/shared/bank';
+
 import { Injectable } from '../../core/decorators/injectable';
-import { HouseSafeTiers, BankAtmDefault, AtmLocations } from '@public/config/bank';
 import { AtmAccount } from './accounts/bank.account.atm';
 import { BusinessAccount } from './accounts/bank.account.business';
 import { FarmAccount } from './accounts/bank.account.farm';
@@ -12,20 +13,28 @@ import { SafeStorageAccount } from './accounts/bank.account.safe';
 @Injectable()
 export class BankAccountService {
     private AccountType: Record<string, any> = {
-        "player": new PlayerAccount(),
-        "business": new BusinessAccount(),
-        "safestorages": new SafeStorageAccount(),
-        "offshore": new OffshoreAccount(),
-        "bank_atm": new AtmAccount(),
-        "farm": new FarmAccount(),
-        "house_safe": new HouseSafeAccount()
-    }
+        player: new PlayerAccount(),
+        business: new BusinessAccount(),
+        safestorages: new SafeStorageAccount(),
+        offshore: new OffshoreAccount(),
+        bank_atm: new AtmAccount(),
+        farm: new FarmAccount(),
+        house_safe: new HouseSafeAccount(),
+    };
     private Accounts: BankAccount[] = [];
 
-    public createAccount(id: string, label: string, account_type: string, owner: string, money: number = 0, marked_money: number = 0, coords = null) {
+    public createAccount(
+        id: string,
+        label: string,
+        account_type: string,
+        owner: string,
+        money = 0,
+        marked_money = 0,
+        coords = null
+    ) {
         if (this.AccountType[account_type] === undefined) {
-            console.log("Account type not valid !")
-            return
+            console.log('Account type not valid !');
+            return;
         }
         const self: BankAccount = {
             id: id.toString(),
@@ -38,21 +47,21 @@ export class BankAccountService {
             changed: false,
             time: new Date().getTime(),
             max: 0,
-        }
+        };
         if (self.money == null) {
-            self.money = this.AccountType[self.type].load(self.id, self.owner, self.coords)
+            self.money = this.AccountType[self.type].load(self.id, self.owner, self.coords);
         }
-        if (self.type === "safestorages") {
-            if (!self.id.match("safe_%w+")) {
-                self.id = "safe_" + self.id
+        if (self.type === 'safestorages') {
+            if (!self.id.match('safe_%w+')) {
+                self.id = 'safe_' + self.id;
             }
-            self.max = 300000
+            self.max = 300000;
         }
-        if (self.type === "house_safe") {
-            self.max = HouseSafeTiers[0]
+        if (self.type === 'house_safe') {
+            self.max = HouseSafeTiers[0];
         }
-        this.Accounts[self.id] = self
-        return this.Accounts[self.id]
+        this.Accounts[self.id] = self;
+        return this.Accounts[self.id];
     }
 
     public removeAccount(acc: any): void {
@@ -64,7 +73,7 @@ export class BankAccountService {
         const account = this.getAccount(acc);
 
         if (money_type === null) {
-            money_type = "money";
+            money_type = 'money';
         }
 
         if (account === null) {
@@ -74,15 +83,19 @@ export class BankAccountService {
         return account[money_type];
     }
 
-    public addMoney(acc: any, money: number, money_type: string | null = null, allowOverflow: boolean = false): boolean {
+    public addMoney(acc: any, money: number, money_type: string | null = null, allowOverflow = false): boolean {
         const account = this.getAccount(acc);
 
         if (money_type === null) {
-            money_type = "money";
+            money_type = 'money';
         }
 
-        let total = Math.ceil(account[money_type] + money - 0.5);
-        if (!allowOverflow && (account.type === "house_safe" || account.type === "safestorages") && total > account.max) {
+        const total = Math.ceil(account[money_type] + money - 0.5);
+        if (
+            !allowOverflow &&
+            (account.type === 'house_safe' || account.type === 'safestorages') &&
+            total > account.max
+        ) {
             return false;
         }
 
@@ -91,7 +104,7 @@ export class BankAccountService {
         return true;
     }
 
-    public removeMoney(acc: any, money: number, money_type: string = "money"): [boolean, string] | boolean {
+    public removeMoney(acc: any, money: number, money_type = 'money'): [boolean, string] | boolean {
         const account = this.getAccount(acc);
 
         if (account[money_type] - money >= 0) {
@@ -99,11 +112,16 @@ export class BankAccountService {
             account.changed = true;
             return true;
         } else {
-            return [false, "no_account_money"];
+            return [false, 'no_account_money'];
         }
     }
 
-    public transferMoney(accSource: any, accTarget: any, money: number, cb?: (success: boolean, reason: string | null) => void): void {
+    public transferMoney(
+        accSource: any,
+        accTarget: any,
+        money: number,
+        cb?: (success: boolean, reason: string | null) => void
+    ): void {
         const sourceAccount = this.getAccount(accSource);
         const targetAccount = this.getAccount(accTarget);
         const roundMoney = Math.round(money);
@@ -114,9 +132,12 @@ export class BankAccountService {
         if (sourceAccount !== null) {
             if (targetAccount !== null) {
                 if (roundMoney <= sourceAccount.money) {
-                    if ((targetAccount.type === "house_safe" || targetAccount.type === "safestorages") && roundMoney > targetAccount.max) {
+                    if (
+                        (targetAccount.type === 'house_safe' || targetAccount.type === 'safestorages') &&
+                        roundMoney > targetAccount.max
+                    ) {
                         success = false;
-                        reason = "transfer_failed";
+                        reason = 'transfer_failed';
 
                         if (cb) {
                             cb(success, reason);
@@ -125,25 +146,35 @@ export class BankAccountService {
                     }
 
                     if (this.removeMoney(accSource, roundMoney) && this.addMoney(accTarget, roundMoney)) {
-                        this.AccountType[sourceAccount.type].save(sourceAccount.id, sourceAccount.owner, sourceAccount.money, sourceAccount.marked_money);
-                        this.AccountType[targetAccount.type].save(targetAccount.id, targetAccount.owner, targetAccount.money, targetAccount.marked_money);
+                        this.AccountType[sourceAccount.type].save(
+                            sourceAccount.id,
+                            sourceAccount.owner,
+                            sourceAccount.money,
+                            sourceAccount.marked_money
+                        );
+                        this.AccountType[targetAccount.type].save(
+                            targetAccount.id,
+                            targetAccount.owner,
+                            targetAccount.money,
+                            targetAccount.marked_money
+                        );
 
                         success = true;
                     } else {
                         success = false;
-                        reason = "transfer_failed";
+                        reason = 'transfer_failed';
                     }
                 } else {
                     success = false;
-                    reason = "no_account_money";
+                    reason = 'no_account_money';
                 }
             } else {
                 success = false;
-                reason = "invalid_account";
+                reason = 'invalid_account';
             }
         } else {
             success = false;
-            reason = "invalid_account";
+            reason = 'invalid_account';
         }
 
         if (cb) {
@@ -154,7 +185,7 @@ export class BankAccountService {
     public accessGranted(acc: any, playerId: number): boolean {
         const account = this.getAccount(acc);
         let owner = account.owner;
-        if (owner.startsWith("safe_")) {
+        if (owner.startsWith('safe_')) {
             owner = owner.substr(5);
         }
         return this.AccountType[account.type].accessAllowed(owner, playerId);
@@ -186,13 +217,13 @@ export class BankAccountService {
                 capacity = v.maxMoney;
             }
         }
-        for (const [k, v] of Object.entries(AtmLocations)) {
+        for (const [, v] of Object.entries(AtmLocations)) {
             if (account.id === v.accountId) {
-                let type = "small";
-                if (account.id.substr(3, 4) === "big") {
-                    type = "big";
+                let type = 'small';
+                if (account.id.substr(3, 4) === 'big') {
+                    type = 'big';
                 }
-                capacity += BankAtmDefault[type].maxMoney
+                capacity += BankAtmDefault[type].maxMoney;
             }
         }
         return capacity;
@@ -200,12 +231,14 @@ export class BankAccountService {
 
     public getAccount(arg: any) {
         if (arg) {
-            if (typeof arg == "object") { return arg }
-            if (typeof arg == "number") {
-                arg = arg.toString()
+            if (typeof arg == 'object') {
+                return arg;
+            }
+            if (typeof arg == 'number') {
+                arg = arg.toString();
             }
 
-            return this.Accounts[arg]
+            return this.Accounts[arg];
         }
     }
 
@@ -216,5 +249,4 @@ export class BankAccountService {
     public getAllAccountTypes(): Record<string, any> {
         return this.AccountType;
     }
-
 }
