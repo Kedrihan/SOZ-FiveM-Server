@@ -57,3 +57,10 @@ export type AtmMinimalInformation = {
     account: string;
     name: string;
 };
+export type BankingInformation = {
+    name: string;
+    accountinfo: string;
+    bankbalance: string;
+    money: string;
+    offshore: string;
+}

@@ -41,7 +41,8 @@ QBCore.Functions.CreateCallback("banking:server:createOffshoreAccount", function
     local Player = QBCore.Functions.GetPlayer(source)
     local offshore = Account("offshore_" .. account)
 
-    if SozJobCore.Functions.HasPermission(account, Player.PlayerData.job.id, Player.PlayerData.job.grade, SozJobCore.JobPermission.SocietyBankAccount) then
+    if SozJobCore.Functions.HasPermission(account, Player.PlayerData.job.id, Player.PlayerData.job.grade,
+                                          SozJobCore.JobPermission.SocietyBankAccount) then
         if offshore == nil then
             Account.Create("offshore_" .. account, "Compte offshore " .. account, "offshore", "offshore_" .. account)
             cb(true)
@@ -60,7 +61,8 @@ QBCore.Functions.CreateCallback("banking:server:TransfertOffshoreMoney", functio
     local CurrentMoney = Player.Functions.GetMoney("marked_money")
     amount = tonumber(amount)
 
-    if SozJobCore.Functions.HasPermission(accountTarget, Player.PlayerData.job.id, Player.PlayerData.job.grade, SozJobCore.JobPermission.SocietyBankAccount) then
+    if SozJobCore.Functions.HasPermission(accountTarget, Player.PlayerData.job.id, Player.PlayerData.job.grade,
+                                          SozJobCore.JobPermission.SocietyBankAccount) then
         if amount <= CurrentMoney then
             if Player.Functions.RemoveMoney("marked_money", amount) then
                 Account.AddMoney("offshore_" .. accountTarget, amount, "marked_money")
@@ -76,7 +78,8 @@ QBCore.Functions.CreateCallback("banking:server:TransfertOffshoreMoney", functio
     cb(false, "unknown")
 end)
 
-QBCore.Functions.CreateCallback("banking:server:TransferMoney", function(source, cb, accountSource, accountTarget, amount, sendNotificationToTarget)
+QBCore.Functions.CreateCallback("banking:server:TransferMoney",
+                                function(source, cb, accountSource, accountTarget, amount, sendNotificationToTarget)
     local Player = QBCore.Functions.GetPlayer(source)
     local CurrentMoney = Player.Functions.GetMoney("money")
     amount = tonumber(amount)
@@ -104,8 +107,9 @@ QBCore.Functions.CreateCallback("banking:server:TransferMoney", function(source,
                 local Target = QBCore.Functions.GetPlayerByBankAccount(accountTarget)
 
                 if Target then
-                    TriggerClientEvent("hud:client:DrawAdvancedNotification", Target.PlayerData.source, "Maze Banque", "Mouvement bancaire",
-                                       "Un versement vient d'être réalisé sur votre compte", "CHAR_BANK_MAZE")
+                    TriggerClientEvent("hud:client:DrawAdvancedNotification", Target.PlayerData.source, "Maze Banque",
+                                       "Mouvement bancaire", "Un versement vient d'être réalisé sur votre compte",
+                                       "CHAR_BANK_MAZE")
                 end
             end
 
@@ -134,14 +138,17 @@ RegisterNetEvent("banking:server:SafeStorageDeposit", function(money_type, safeS
             if Player.Functions.RemoveMoney(money_type, amount) then
                 local added = Account.AddMoney(safeStorage, amount, money_type)
                 if added ~= false then
-                    TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, ("Vous avez déposé ~g~$%s"):format(amount))
+                    TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                                       ("Vous avez déposé ~g~$%s"):format(amount))
                 else
                     Player.Functions.AddMoney(money_type, amount)
-                    TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Le coffre n'a plus de place", "error")
+                    TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                                       "Le coffre n'a plus de place", "error")
                 end
             end
         else
-            TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Vous n'avez pas assez d'argent", "error")
+            TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                               "Vous n'avez pas assez d'argent", "error")
         end
     end
 end)
@@ -159,10 +166,12 @@ RegisterNetEvent("banking:server:SafeStorageWithdraw", function(money_type, safe
         if amount <= CurrentMoney then
             if Player.Functions.AddMoney(money_type, amount) then
                 Account.RemoveMoney(safeStorage, amount, money_type)
-                TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, ("Vous avez retiré ~g~$%s"):format(amount))
+                TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                                   ("Vous avez retiré ~g~$%s"):format(amount))
             end
         else
-            TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Vous n'avez pas assez d'argent", "error")
+            TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                               "Vous n'avez pas assez d'argent", "error")
         end
     end
 end)
@@ -184,7 +193,8 @@ exports("TransferCashMoney", function(source, target, amount, cb)
             cb(false, "could_not_add_money")
         end
     else
-        TriggerClientEvent("hud:client:DrawNotification", player.PlayerData.source, "Vous n'avez pas assez d'argent", "error")
+        TriggerClientEvent("hud:client:DrawNotification", player.PlayerData.source, "Vous n'avez pas assez d'argent",
+                           "error")
         cb(false, "insufficient_funds")
     end
 end)
@@ -218,13 +228,6 @@ QBCore.Functions.CreateCallback("banking:server:openHouseSafeStorage", function(
     else
         cb(false)
     end
-end)
-
-RegisterNetEvent("banking:server:updatePhoneBalance", function()
-    local Player = QBCore.Functions.GetPlayer(source)
-    local account = Account(Player.PlayerData.charinfo.account)
-
-    TriggerClientEvent("phone:client:app:bank:updateBalance", Player.PlayerData.source, Player.Functions.GetName(), account.id, account.money)
 end)
 
 exports("GetPlayerAccount", function(source)

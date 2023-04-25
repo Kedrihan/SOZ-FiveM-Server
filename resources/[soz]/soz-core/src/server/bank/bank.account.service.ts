@@ -31,7 +31,7 @@ export class BankAccountService {
         money = 0,
         marked_money = 0,
         coords = null
-    ) {
+    ): BankAccount {
         if (this.AccountType[account_type] === undefined) {
             console.log('Account type not valid !');
             return;
@@ -229,7 +229,7 @@ export class BankAccountService {
         return capacity;
     }
 
-    public getAccount(arg: any) {
+    public getAccount(arg: any): BankAccount | null {
         if (arg) {
             if (typeof arg == 'object') {
                 return arg;

@@ -3,7 +3,6 @@ import { AccountShell } from "./bank.account.base";
 import { Inject, Injectable } from "@public/core/decorators/injectable";
 import { PrismaService } from "@public/server/database/prisma.service";
 import { QBCore } from "@public/server/qbcore";
-import { BankEvents } from "../../../../../soz-phone/typings/app/bank";
 
 @Injectable()
 export class PlayerAccount extends AccountShell {
@@ -59,7 +58,7 @@ export class PlayerAccount extends AccountShell {
         });
 
         if (player) {
-            TriggerClientEvent(BankEvents.FIVEM_EVENT_UPDATE_BALANCE, player.PlayerData.source, player.PlayerData.name, id, amount);
+            TriggerClientEvent('phone:client:app:bank:updateBalance', player.PlayerData.source, player.PlayerData.name, id, amount);
         }
 
         return true;

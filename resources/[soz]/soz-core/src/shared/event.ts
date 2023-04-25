@@ -229,6 +229,8 @@ export enum ServerEvent {
     BANK_SEND_SOCIETY_INVOICE = 'soz-core:server:bank:sendSocietyInvoice',
     BANK_REFUSE_INVOICE = 'soz-core:server:bank:refuseInvoice',
     BANK_ACCEPT_INVOICE = 'soz-core:server:bank:acceptInvoice',
+    BANK_SAFE_DEPOSIT = 'soz-core:server:bank:safeStorageDeposit',
+    BANK_SAFE_WITHDRAW = 'soz-core:server:bank:safeStorageWithdraw',
     ATM_REMOVE_LIQUIDITY = 'soz-core:server:bank:removeAtmLiquidity',
 
 }
