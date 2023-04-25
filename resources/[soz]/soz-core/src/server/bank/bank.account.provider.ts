@@ -25,7 +25,7 @@ export class BankAccountProvider {
     private prismaService: PrismaService;
 
     @Once(OnceStep.DatabaseConnected)
-    public async onOnceStart() {
+    public async onOnceStart(): Promise<void> {
         const allJobs = this.jobService.getJobs();
         const allAccounts = await this.prismaService.bank_accounts.findMany();
         const EnterpriseAccountNotLoaded = { ...allJobs };
@@ -87,7 +87,7 @@ export class BankAccountProvider {
     }
 
     @Once(OnceStep.PlayerLoaded)
-    public async onPlayerLoaded(player: PlayerData) {
+    public async onPlayerLoaded(player: PlayerData): Promise<void> {
         let account = this.bankAccountService.getAccount(player.charinfo.account);
         if (account == null) {
             account = this.bankAccountService.createAccount(player.charinfo.account, player.name, "player", player.citizenid)
@@ -102,7 +102,7 @@ export class BankAccountProvider {
     }
 
     @Tick(TickInterval.EVERY_MINUTE)
-    public async saveAccounts() {
+    public async saveAccounts(): Promise<void> {
         for (const account of this.bankAccountService.getAllAccounts()) {
             if (account.changed) {
                 const accountType = this.bankAccountService.getAllAccountTypes()[account.type];
@@ -114,7 +114,7 @@ export class BankAccountProvider {
     }
 
     @Rpc(RpcServerEvent.BANK_GET_TERMINAL_TYPE)
-    public async getTerminalType(source: number, accountId: string, atmType: string) {
+    public async getTerminalType(source: number, accountId: string, atmType: string): Promise<string> {
         return AtmAccount.getTerminalType(accountId, atmType);
     };
 }

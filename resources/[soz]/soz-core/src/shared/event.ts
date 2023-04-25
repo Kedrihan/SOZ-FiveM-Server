@@ -225,6 +225,8 @@ export enum ServerEvent {
     CRIMI_SMOKE_STRESS = 'soz-core:server:crimi:smoke-stress',
 
     BANK_REMOVE_LIQUIDITY = 'soz-core:server:bank:removeLiquidity',
+    BANK_SEND_INVOICE = 'soz-core:server:bank:sendInvoice',
+    BANK_SEND_SOCIETY_INVOICE = 'soz-core:server:bank:sendSocietyInvoice',
     BANK_REFUSE_INVOICE = 'soz-core:server:bank:refuseInvoice',
     BANK_ACCEPT_INVOICE = 'soz-core:server:bank:acceptInvoice',
     ATM_REMOVE_LIQUIDITY = 'soz-core:server:bank:removeAtmLiquidity',
@@ -392,7 +394,9 @@ export enum ClientEvent {
     BANK_EXIT_LOCATION = 'locations:zone:exit',
 
     ATM_DISPLAY_BLIPS = 'soz-core:client:banking:displayAtmBlips',
-
+    BANK_INVOICE_REJECTED = 'soz-core:client:banking:invoiceRejected',
+    BANK_INVOICE_RECEIVED = 'soz-core:client:banking:invoiceReceived',
+    BANK_INVOICE_PAID = 'soz-core:client:banking:invoicePaid',
 }
 
 export enum GameEvent {

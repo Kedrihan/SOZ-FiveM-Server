@@ -5,9 +5,9 @@ export enum InvoicesEvents {
     REFUSE_INVOICE = 'phone:app:invoices:refuse',
     PAY_INVOICE = 'phone:app:invoices:pay',
 
-    FIVEM_EVENT_INVOICE_PAID = 'banking:client:invoicePaid',
-    FIVEM_EVENT_INVOICE_REJECTED = 'banking:client:invoiceRejected',
-    FIVEM_EVENT_INVOICE_RECEIVED = 'banking:client:invoiceReceived',
+    FIVEM_EVENT_INVOICE_PAID = 'soz-core:client:banking:invoicePaid',
+    FIVEM_EVENT_INVOICE_REJECTED = 'soz-core:client:banking:invoiceRejected',
+    FIVEM_EVENT_INVOICE_RECEIVED = 'soz-core:client:banking:invoiceReceived',
 }
 
 export interface InvoiceItem {

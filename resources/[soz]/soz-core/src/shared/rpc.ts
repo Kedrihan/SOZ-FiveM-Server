@@ -100,6 +100,7 @@ export enum RpcServerEvent {
     BANK_GET_ACCOUNT = 'soz-core:server:bank:getBankAccount',
     BANK_GET_TERMINAL_TYPE = 'soz-core:server:bank:getTerminalType',
     BANK_HAS_ENOUGH_LIQUIDITY = 'soz-core:server:bank:hasEnoughLiquidity',
+    BANK_GET_ALL_PLAYER_INVOICES = 'soz-core:server:bank:getAllPlayerInvoices',
     ATM_GET_MONEY = 'soz-core:server:bank:getAtmMoney',
     ATM_GET_ACCOUNT = 'soz-core:server:bank:getAtmAccount',
 }

@@ -1,6 +1,6 @@
 import { Once, OnceStep, OnEvent } from '@public/core/decorators/event';
 import { Invoice } from '@public/shared/bank';
-import { ServerEvent } from '@public/shared/event';
+import { ClientEvent, ServerEvent } from '@public/shared/event';
 import { Monitor } from '@public/shared/monitor';
 
 import { Inject } from '../../core/decorators/injectable';
@@ -9,7 +9,15 @@ import { PrismaService } from '../database/prisma.service';
 import { Notifier } from '../notifier';
 import { PlayerService } from '../player/player.service';
 import { BankAccountService } from './bank.account.service';
-import { PlayerData } from '@public/shared/player';
+import { PlayerData, QBCorePlayer } from '@public/shared/player';
+import { JobPermissionService } from '@public/client/job/job.permission.service';
+import { JobPermission } from '@public/shared/job';
+import { QBCore } from '../qbcore';
+import { Rpc } from '@public/core/decorators/rpc';
+import { RpcServerEvent } from '@public/shared/rpc';
+import { InventoryManager } from '../inventory/inventory.manager';
+import { getDistance, Vector3, Vector4 } from '@public/shared/polyzone/vector';
+import { JobService } from '@public/client/job/job.service';
 
 @Provider()
 export class BankInvoiceProvider {
@@ -27,12 +35,24 @@ export class BankInvoiceProvider {
     @Inject(PlayerService)
     private playerService: PlayerService;
 
+    @Inject(JobPermissionService)
+    private jobPermissionService: JobPermissionService;
+
     @Inject(Monitor)
     private monitor: Monitor;
 
+    @Inject(QBCore)
+    private qbCore: QBCore;
+
+    @Inject(InventoryManager)
+    private inventoryManager: InventoryManager;
+
+    @Inject(JobService)
+    private jobService: JobService;
+
     @Once(OnceStep.DatabaseConnected)
-    public async onOnce() {
-        const invoices = await this.prismaService.invoice.findMany({
+    public async onOnce(): Promise<void> {
+        const invoices = await this.prismaService.invoices.findMany({
             where: {
                 payed: false,
                 refused: false,
@@ -49,15 +69,82 @@ export class BankInvoiceProvider {
         }
     }
 
+    @Rpc(RpcServerEvent.BANK_GET_ALL_PLAYER_INVOICES)
+    public async onGetAllPlayerInvoices(source: number): Promise<Record<number, Invoice>> {
+        const player = this.playerService.getPlayer(source);
+        if (player === null) {
+            return null;
+        }
+        for (let [account, invoices] of Object.entries(this.Invoices)) {
+            if (this.playerHaveAccessToInvoices(player, account)) {
+                return invoices;
+            }
+        }
+        return null;
+    }
+
+    @OnEvent(ServerEvent.BANK_SEND_INVOICE)
+    public async onSendInvoice(source: number, targetSource: number, label: string, amount: number, kind: string): Promise<void> {
+        const player = this.playerService.getPlayer(source);
+        const target = this.playerService.getPlayer(targetSource);
+
+        if (amount === null || amount <= 0 || player === null || target === null || player === target) {
+            return;
+        }
+
+        if (this.inventoryManager.removeItemFromInventory(source, 'paper', 1)) {
+            if (await this.createInvoice(player, target, target.charinfo.account, label, amount, kind)) {
+                this.notifier.notify(source, "Votre facture a bien été émise", 'success');
+            }
+        }
+        else {
+            this.notifier.notify(source, "Vous n'avez pas de papier", 'error');
+        }
+    }
+
+    @OnEvent(ServerEvent.BANK_SEND_SOCIETY_INVOICE)
+    public async onSendSocietyInvoice(source: number, targetSource: number, label: string, amount: number, kind: string): Promise<void> {
+        const player = this.playerService.getPlayer(source);
+        const target = this.playerService.getPlayer(targetSource);
+
+        if (amount === null || amount <= 0 || player === null || target === null || player === target) {
+            return;
+        }
+        if (this.inventoryManager.removeItemFromInventory(source, 'paper', 1)) {
+            if (await this.createInvoice(player, target, target.job.id, label, amount, kind)) {
+                this.notifier.notify(source, "Votre facture a bien été émise", 'success');
+            }
+        }
+        else {
+            this.notifier.notify(source, "Vous n'avez pas de papier", 'error');
+        }
+    }
+
+    @OnEvent(ServerEvent.BANK_ACCEPT_INVOICE)
+    public async onAcceptInvoice(source: number, invoiceId: number): Promise<void> {
+        const player = this.qbCore.getPlayer(source);
+        if (player === null) {
+            return;
+        }
+        for (const [account, invoices] of Object.entries(this.Invoices)) {
+            for (const [id, _] of Object.entries(invoices)) {
+                if (Number(id) === invoiceId) {
+                    await this.payInvoice(player, account, invoiceId);
+                    return;
+                }
+            }
+        }
+        this.notifier.notify(source, "Vous n'avez pas de facture à payer", 'info');
+    }
     @OnEvent(ServerEvent.BANK_REFUSE_INVOICE)
-    public async onRefuseInvoice(source: number, invoiceId: number) {
+    public async onRefuseInvoice(source: number, invoiceId: number): Promise<void> {
         const player = this.playerService.getPlayer(source);
         if (player === null) {
             return;
         }
         for (const [account, invoices] of Object.entries(this.Invoices)) {
             for (const [id, _] of Object.entries(invoices)) {
-                if (id === invoiceId) {
+                if (Number(id) === invoiceId) {
                     this.rejectInvoice(player, account, invoiceId);
                     return;
                 }
@@ -65,16 +152,97 @@ export class BankInvoiceProvider {
         }
         this.notifier.notify(source, "Vous n'avez pas de facture à payer", 'info');
     }
-    private rejectInvoice(player: PlayerData, account: string, id: number): boolean {
-        if (!this.playerHaveAccessToInvoices(player, account)) {
-            return false;
+
+
+    private async payInvoice(player: QBCorePlayer, account: string, id: number): Promise<void> {
+        if (!this.playerHaveAccessToInvoices(player.PlayerData, account) || !this.Invoices[account] || !this.Invoices[account][id]) {
+            return;
         }
-        if (!this.Invoices[account]) {
-            return false;
+
+        const invoice = this.Invoices[account][id];
+        const emitter = this.qbCore.getPlayerByCitizenId(invoice.emitter);
+        if (player.PlayerData.charinfo.account === account) {
+            const moneyAmount = player.Functions.GetMoney("money")
+            const moneyMarkedAmount = player.Functions.GetMoney("marked_money")
+            if ((moneyAmount + moneyMarkedAmount) >= invoice.amount) {
+                let moneyTake = 0;
+                let markedMoneyTake = 0;
+                if (moneyMarkedAmount >= invoice.amount) {
+                    markedMoneyTake = invoice.amount;
+                } else {
+                    markedMoneyTake = moneyMarkedAmount;
+                    moneyTake = invoice.amount - moneyMarkedAmount;
+                }
+                player.Functions.RemoveMoney("money", moneyTake)
+                player.Functions.RemoveMoney("marked_money", markedMoneyTake)
+
+                this.bankAccountService.addMoney(invoice.emitterSafe, moneyTake, 'money');
+                this.bankAccountService.addMoney(invoice.emitterSafe, markedMoneyTake, 'marked_money');
+                await this.prismaService.invoices.update({
+                    where: {
+                        id: invoice.id,
+                    },
+                    data: {
+                        payed: true,
+                    },
+                });
+                this.notifier.notify(player.PlayerData.source, "Vous avez ~g~payé~s~ votre facture", 'success');
+                if (emitter) {
+                    this.notifier.notify(emitter.PlayerData.source, `Votre facture ~b~${invoice.label}~s~ a été ~g~payée`, 'success');
+                }
+                this.monitor.publish("invoice_pay", {
+                    player_source: player.PlayerData.source,
+                    invoice_kind: "invoice",
+                    invoice_job: "",
+                }, {
+                    target_source: emitter && emitter.PlayerData.source || null,
+                    id: id,
+                    amount: invoice.amount,
+                    target_account: invoice.emitterSafe,
+                    source_account: invoice.targetAccount,
+                });
+                delete this.Invoices[account][id];
+                TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.PlayerData.source, id)
+            }
+            else {
+                this.bankAccountService.transferMoney(invoice.targetAccount, invoice.emitterSafe, invoice.amount, (success: boolean, reason: string) => {
+                    if (success) {
+                        this.prismaService.invoices.update({
+                            where: {
+                                id: invoice.id,
+                            },
+                            data: {
+                                payed: true,
+                            },
+                        });
+                        this.notifier.notify(player.PlayerData.source, "Vous avez ~g~payé~s~ la facture de la société", 'success');
+                        if (emitter) {
+                            this.notifier.notify(emitter.PlayerData.source, `Votre facture ~b~${invoice.label}~s~ a été ~g~payée`, 'success');
+                        }
+                        this.monitor.publish("invoice_pay", {
+                            player_source: player.PlayerData.source,
+                            invoice_kind: "invoice",
+                            invoice_job: player.PlayerData.job.id,
+                        }, {
+                            target_source: emitter && emitter.PlayerData.source || null,
+                            id: id,
+                            amount: invoice.amount,
+                            target_account: invoice.emitterSafe,
+                            source_account: invoice.targetAccount,
+                        });
+                        delete this.Invoices[account][id];
+                        TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.PlayerData.source, id)
+                    }
+                });
+            }
+
         }
-        if (!this.Invoices[account][id]) {
-            return false;
+    }
+    private rejectInvoice(player: PlayerData, account: string, id: number): void {
+        if (!this.playerHaveAccessToInvoices(player, account) || !this.Invoices[account] || !this.Invoices[account][id]) {
+            return;
         }
+
         const invoice = this.Invoices[account][id];
         const target = this.playerService.getPlayerByCitizenId(invoice.citizenid);
         const emitter = this.playerService.getPlayerByCitizenId(invoice.emitter);
@@ -121,7 +289,7 @@ export class BankInvoiceProvider {
                 }
             );
         }
-        this.prismaService.invoice.update({
+        this.prismaService.invoices.update({
             where: {
                 id: invoice.id,
             },
@@ -130,19 +298,67 @@ export class BankInvoiceProvider {
             },
         });
         delete this.Invoices[account][id];
-        TriggerClientEvent("banking:client:invoiceRejected", source, id)
+        TriggerClientEvent(ClientEvent.BANK_INVOICE_REJECTED, source, id);
     }
-    /*
-    
-    local function RejectInvoice(PlayerData, account, id)
-
-    MySQL.update.await("UPDATE invoices SET refused = true WHERE id = ? AND payed = false AND refused = false", {
-        invoice.id,
-    })
-    Invoices[account][id] = nil
-    TriggerClientEvent("banking:client:invoiceRejected", Player.PlayerData.source, id)
-
-    return true
-end
-        */
+    private playerHaveAccessToInvoices(player: PlayerData, account: string): boolean {
+        if (player.charinfo.account === account) {
+            return true;
+        }
+        return this.jobPermissionService.hasPermission(player.job.id, JobPermission.SocietyBankInvoices);
+    }
+    private async createInvoice(emitter: PlayerData, target: PlayerData, targetAccount: string, label: string, amount: number, kind: string): Promise<boolean> {
+        const dist = getDistance(GetEntityCoords(GetPlayerPed(emitter.source)) as Vector4, GetEntityCoords(GetPlayerPed(target.source)) as Vector4);
+        if (dist > 5) {
+            this.notifier.notify(emitter.source, 'Personne n\'est à portée de vous', 'error');
+            return false;
+        }
+        const allJobs = this.jobService.getJobs();
+        const id = (await this.prismaService.invoices.create({
+            data: {
+                citizenid: target.citizenid,
+                emitter: emitter.citizenid,
+                emitterName: allJobs[emitter.job.id].label,
+                emitterSafe: `safe_${emitter.job.id}`,
+                targetAccount: targetAccount,
+                label: label,
+                amount: amount,
+                kind: kind || "invoice",
+            },
+        })).id;
+        if (id) {
+            if (!this.Invoices[targetAccount]) {
+                this.Invoices[targetAccount] = {};
+            }
+            this.Invoices[targetAccount][id] = {
+                id: id,
+                citizenid: target.citizenid,
+                emitter: emitter.citizenid,
+                emitterName: allJobs[emitter.job.id].label,
+                emitterSafe: `safe_${emitter.job.id}`,
+                targetAccount: targetAccount,
+                label: label,
+                amount: amount,
+            };
+            TriggerClientEvent(ClientEvent.BANK_INVOICE_RECEIVED, target.source, id, label, amount, allJobs[emitter.job.id].label);
+            let invoiceJob = "";
+            if (targetAccount !== target.charinfo.account) {
+                invoiceJob = target.job.id;
+            }
+            this.monitor.publish("invoice_emit",
+                {
+                    player_source: emitter.source,
+                    invoice_kind: kind || "invoice",
+                    invoice_job: invoiceJob,
+                }, {
+                target_source: target.source,
+                position: GetEntityCoords(GetPlayerPed(emitter.source)),
+                title: label,
+                id: id,
+                amount: amount,
+                target_account: targetAccount,
+            });
+            return true;
+        }
+        return false;
+    }
 }
