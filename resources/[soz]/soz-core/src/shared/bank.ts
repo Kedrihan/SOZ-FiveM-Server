@@ -41,6 +41,14 @@ export type JobSafe = {
     maxZ?: number;
     debug?: boolean;
 };
+export type BankMetrics = {
+    id: string;
+    label: string;
+    type: string;
+    owner: string;
+    money: number;
+    marked_money: number;
+};
 export type BankAccount = {
     id: string;
     label: string;
@@ -48,10 +56,10 @@ export type BankAccount = {
     owner: string;
     money: number;
     marked_money: number;
-    coords?: Vector3;
-    changed?: boolean;
-    time?: number;
-    max?: number;
+    coords: Vector3;
+    changed: boolean;
+    time: number;
+    max: number;
 };
 export type AtmMinimalInformation = {
     account: string;

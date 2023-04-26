@@ -6,7 +6,7 @@ import { Invoice } from '@public/shared/bank';
 import { ClientEvent, ServerEvent } from '@public/shared/event';
 import { JobPermission } from '@public/shared/job';
 import { Monitor } from '@public/shared/monitor';
-import { PlayerData, QBCorePlayer } from '@public/shared/player';
+import { PlayerData } from '@public/shared/player';
 import { getDistance, Vector4 } from '@public/shared/polyzone/vector';
 import { RpcServerEvent } from '@public/shared/rpc';
 
@@ -15,8 +15,8 @@ import { Provider } from '../../core/decorators/provider';
 import { PrismaService } from '../database/prisma.service';
 import { InventoryManager } from '../inventory/inventory.manager';
 import { Notifier } from '../notifier';
+import { PlayerMoneyService } from '../player/player.money.service';
 import { PlayerService } from '../player/player.service';
-import { QBCore } from '../qbcore';
 import { BankAccountService } from './bank.account.service';
 
 @Provider()
@@ -41,11 +41,11 @@ export class BankInvoiceProvider {
     @Inject(Monitor)
     private monitor: Monitor;
 
-    @Inject(QBCore)
-    private qbCore: QBCore;
-
     @Inject(InventoryManager)
     private inventoryManager: InventoryManager;
+
+    @Inject(PlayerMoneyService)
+    private playerMoneyService: PlayerMoneyService;
 
     @Inject(JobService)
     private jobService: JobService;
@@ -132,7 +132,7 @@ export class BankInvoiceProvider {
 
     @OnEvent(ServerEvent.BANK_ACCEPT_INVOICE)
     public async onAcceptInvoice(source: number, invoiceId: number): Promise<void> {
-        const player = this.qbCore.getPlayer(source);
+        const player = this.playerService.getPlayer(source);
         if (player === null) {
             return;
         }
@@ -163,9 +163,9 @@ export class BankInvoiceProvider {
         this.notifier.notify(source, "Vous n'avez pas de facture à payer", 'info');
     }
 
-    private async payInvoice(player: QBCorePlayer, account: string, id: number): Promise<void> {
+    private async payInvoice(player: PlayerData, account: string, id: number): Promise<void> {
         if (
-            !this.playerHaveAccessToInvoices(player.PlayerData, account) ||
+            !this.playerHaveAccessToInvoices(player, account) ||
             !this.Invoices[account] ||
             !this.Invoices[account][id]
         ) {
@@ -173,10 +173,10 @@ export class BankInvoiceProvider {
         }
 
         const invoice = this.Invoices[account][id];
-        const emitter = this.qbCore.getPlayerByCitizenId(invoice.emitter);
-        if (player.PlayerData.charinfo.account === account) {
-            const moneyAmount = player.Functions.GetMoney('money');
-            const moneyMarkedAmount = player.Functions.GetMoney('marked_money');
+        const emitter = this.playerService.getPlayerByCitizenId(invoice.emitter);
+        if (player.charinfo.account === account) {
+            const moneyAmount = player.money.money;
+            const moneyMarkedAmount = player.money.marked_money;
             if (moneyAmount + moneyMarkedAmount >= invoice.amount) {
                 let moneyTake = 0;
                 let markedMoneyTake = 0;
@@ -186,8 +186,8 @@ export class BankInvoiceProvider {
                     markedMoneyTake = moneyMarkedAmount;
                     moneyTake = invoice.amount - moneyMarkedAmount;
                 }
-                player.Functions.RemoveMoney('money', moneyTake);
-                player.Functions.RemoveMoney('marked_money', markedMoneyTake);
+                this.playerMoneyService.remove(player.source, moneyTake, 'money');
+                this.playerMoneyService.remove(player.source, markedMoneyTake, 'marked_money');
 
                 this.bankAccountService.addMoney(invoice.emitterSafe, moneyTake, 'money');
                 this.bankAccountService.addMoney(invoice.emitterSafe, markedMoneyTake, 'marked_money');
@@ -199,10 +199,10 @@ export class BankInvoiceProvider {
                         payed: true,
                     },
                 });
-                this.notifier.notify(player.PlayerData.source, 'Vous avez ~g~payé~s~ votre facture', 'success');
+                this.notifier.notify(player.source, 'Vous avez ~g~payé~s~ votre facture', 'success');
                 if (emitter) {
                     this.notifier.notify(
-                        emitter.PlayerData.source,
+                        emitter.source,
                         `Votre facture ~b~${invoice.label}~s~ a été ~g~payée`,
                         'success'
                     );
@@ -210,12 +210,12 @@ export class BankInvoiceProvider {
                 this.monitor.publish(
                     'invoice_pay',
                     {
-                        player_source: player.PlayerData.source,
+                        player_source: player.source,
                         invoice_kind: 'invoice',
                         invoice_job: '',
                     },
                     {
-                        target_source: (emitter && emitter.PlayerData.source) || null,
+                        target_source: (emitter && emitter.source) || null,
                         id: id,
                         amount: invoice.amount,
                         target_account: invoice.emitterSafe,
@@ -223,54 +223,48 @@ export class BankInvoiceProvider {
                     }
                 );
                 delete this.Invoices[account][id];
-                TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.PlayerData.source, id);
+                TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.source, id);
             } else {
-                this.bankAccountService.transferMoney(
+                const [success, _] = this.bankAccountService.transferMoney(
                     invoice.targetAccount,
                     invoice.emitterSafe,
-                    invoice.amount,
-                    (success: boolean) => {
-                        if (success) {
-                            this.prismaService.invoices.update({
-                                where: {
-                                    id: invoice.id,
-                                },
-                                data: {
-                                    payed: true,
-                                },
-                            });
-                            this.notifier.notify(
-                                player.PlayerData.source,
-                                'Vous avez ~g~payé~s~ la facture de la société',
-                                'success'
-                            );
-                            if (emitter) {
-                                this.notifier.notify(
-                                    emitter.PlayerData.source,
-                                    `Votre facture ~b~${invoice.label}~s~ a été ~g~payée`,
-                                    'success'
-                                );
-                            }
-                            this.monitor.publish(
-                                'invoice_pay',
-                                {
-                                    player_source: player.PlayerData.source,
-                                    invoice_kind: 'invoice',
-                                    invoice_job: player.PlayerData.job.id,
-                                },
-                                {
-                                    target_source: (emitter && emitter.PlayerData.source) || null,
-                                    id: id,
-                                    amount: invoice.amount,
-                                    target_account: invoice.emitterSafe,
-                                    source_account: invoice.targetAccount,
-                                }
-                            );
-                            delete this.Invoices[account][id];
-                            TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.PlayerData.source, id);
-                        }
-                    }
+                    invoice.amount
                 );
+                if (success) {
+                    this.prismaService.invoices.update({
+                        where: {
+                            id: invoice.id,
+                        },
+                        data: {
+                            payed: true,
+                        },
+                    });
+                    this.notifier.notify(player.source, 'Vous avez ~g~payé~s~ la facture de la société', 'success');
+                    if (emitter) {
+                        this.notifier.notify(
+                            emitter.source,
+                            `Votre facture ~b~${invoice.label}~s~ a été ~g~payée`,
+                            'success'
+                        );
+                    }
+                    this.monitor.publish(
+                        'invoice_pay',
+                        {
+                            player_source: player.source,
+                            invoice_kind: 'invoice',
+                            invoice_job: player.job.id,
+                        },
+                        {
+                            target_source: (emitter && emitter.source) || null,
+                            id: id,
+                            amount: invoice.amount,
+                            target_account: invoice.emitterSafe,
+                            source_account: invoice.targetAccount,
+                        }
+                    );
+                    delete this.Invoices[account][id];
+                    TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.source, id);
+                }
             }
         }
     }

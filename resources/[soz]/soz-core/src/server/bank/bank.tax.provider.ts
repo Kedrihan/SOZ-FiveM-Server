@@ -49,19 +49,18 @@ export class BankTaxProvider {
         this.monitor.log('INFO', `Society ${society} paid ${tax}$ tax. Percentage: ${percentage}%`);
         for (const [account, repartition] of Object.entries(SocietyTaxes.taxRepartition)) {
             const money = Math.ceil((tax * repartition) / 100);
-            this.bankAccountService.transferMoney(society, account, money, (success, reason) => {
-                if (success) {
-                    this.monitor.log(
-                        'INFO',
-                        `Public society ${account} receive ${money}$ tax. Percentage: ${repartition}%`
-                    );
-                } else {
-                    this.monitor.log(
-                        'ERROR',
-                        `Public society ${account} can't receive ${money}$ tax. Percentage: ${repartition}% | Reason: ${reason}`
-                    );
-                }
-            });
+            const [success, reason] = this.bankAccountService.transferMoney(society, account, money);
+            if (success) {
+                this.monitor.log(
+                    'INFO',
+                    `Public society ${account} receive ${money}$ tax. Percentage: ${repartition}%`
+                );
+            } else {
+                this.monitor.log(
+                    'ERROR',
+                    `Public society ${account} can't receive ${money}$ tax. Percentage: ${repartition}% | Reason: ${reason}`
+                );
+            }
         }
     }
 }

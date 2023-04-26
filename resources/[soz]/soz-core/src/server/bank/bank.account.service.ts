@@ -1,5 +1,5 @@
 import { AtmLocations, BankAtmDefault, HouseSafeTiers } from '@public/config/bank';
-import { BankAccount } from '@public/shared/bank';
+import { BankAccount, BankMetrics } from '@public/shared/bank';
 
 import { Injectable } from '../../core/decorators/injectable';
 import { AtmAccount } from './accounts/bank.account.atm';
@@ -177,8 +177,8 @@ export class BankAccountService {
         return this.AccountType[account.type].accessAllowed(owner, playerId);
     }
 
-    public getMetrics(): BankAccount[] {
-        const metrics: BankAccount[] = [];
+    public getMetrics(): BankMetrics[] {
+        const metrics: BankMetrics[] = [];
         for (const account of this.Accounts) {
             metrics.push({
                 id: account.id,

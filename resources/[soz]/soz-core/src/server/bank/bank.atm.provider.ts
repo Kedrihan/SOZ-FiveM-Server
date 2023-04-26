@@ -1,31 +1,21 @@
-import { PlayerVehicleState } from '@public/shared/vehicle/player.vehicle';
+import { AtmLocations, BankPedLocations } from '@public/config/bank';
+import { AtmMinimalInformation, BankAccount } from '@public/shared/bank';
 
-import { On } from '../../core/decorators/event';
+import { OnEvent } from '../../core/decorators/event';
 import { Inject } from '../../core/decorators/injectable';
 import { Provider } from '../../core/decorators/provider';
 import { Rpc } from '../../core/decorators/rpc';
-import { DrivingSchoolConfig, DrivingSchoolLicenseType } from '../../shared/driving-school';
 import { ClientEvent, ServerEvent } from '../../shared/event';
-import { Vector3, Vector4, getDistance } from '../../shared/polyzone/vector';
+import { getDistance, Vector3 } from '../../shared/polyzone/vector';
 import { RpcServerEvent } from '../../shared/rpc';
-import { PrismaService } from '../database/prisma.service';
 import { Notifier } from '../notifier';
-import { PlayerMoneyService } from '../player/player.money.service';
-import { PlayerService } from '../player/player.service';
-import { VehicleSpawner } from '../vehicle/vehicle.spawner';
-import { AtmMinimalInformation, BankAccount } from '@public/shared/bank';
-import { BankAccountService } from './bank.account.service';
-import { AtmLocations, BankPedLocations } from '@public/config/bank';
 import { QBCore } from '../qbcore';
-import { OnEvent } from '../../core/decorators/event';
+import { BankAccountService } from './bank.account.service';
 
 @Provider()
 export class BankAtmProvider {
     @Inject(Notifier)
     private notifier: Notifier;
-
-    @Inject(PlayerService)
-    private playerService: PlayerService;
 
     @Inject(QBCore)
     private qbCore: QBCore;
@@ -33,8 +23,6 @@ export class BankAtmProvider {
     @Inject(BankAccountService)
     private bankAccountService: BankAccountService;
 
-    @Inject(PrismaService)
-    private prismaService: PrismaService;
 
     @Rpc(RpcServerEvent.ATM_GET_MONEY)
     public async getAtmMoney(source: number, atmType: string, coords: Vector3): Promise<number> {
@@ -43,7 +31,11 @@ export class BankAtmProvider {
     }
 
     @Rpc(RpcServerEvent.ATM_GET_ACCOUNT)
-    public async getAtmAccountCallback(source: number, atmType: string, coords: Vector3): Promise<AtmMinimalInformation> {
+    public async getAtmAccountCallback(
+        source: number,
+        atmType: string,
+        coords: Vector3
+    ): Promise<AtmMinimalInformation> {
         const coordsHash = this.getAtmHashByCoords(coords);
         const [account, created] = this.getAtmAccount(atmType, coords);
         if (created) {
@@ -52,7 +44,7 @@ export class BankAtmProvider {
                 TriggerClientEvent(ClientEvent.ATM_DISPLAY_BLIPS, playerSource, { [account.owner]: coords });
             }
         }
-        return { account: account.owner, name: `atm_${atmType}_${coordsHash}` }
+        return { account: account.owner, name: `atm_${atmType}_${coordsHash}` };
     }
 
     @Rpc(RpcServerEvent.BANK_GET_ACCOUNT)
@@ -68,14 +60,18 @@ export class BankAtmProvider {
     }
 
     @Rpc(RpcServerEvent.BANK_HAS_ENOUGH_LIQUIDITY)
-    public async hasEnoughLiquidityCallback(source: number, accountId: string, amount: number): Promise<[boolean, string]> {
+    public async hasEnoughLiquidityCallback(
+        source: number,
+        accountId: string,
+        amount: number
+    ): Promise<[boolean, string]> {
         const account = this.bankAccountService.getAccount(accountId);
         if (account == null) {
-            this.notifier.notify(source, "Compte invalide", "error");
+            this.notifier.notify(source, 'Compte invalide', 'error');
             return;
         }
         if (account.money < amount) {
-            return [false, "invalid_liquidity"];
+            return [false, 'invalid_liquidity'];
         }
         return [true, null];
     }
@@ -84,11 +80,11 @@ export class BankAtmProvider {
     public async removeLiquidity(source: number, accountId: string, amount: number): Promise<void> {
         const account = this.bankAccountService.getAccount(accountId);
         if (account == null) {
-            this.notifier.notify(source, "Compte invalide", "error");
+            this.notifier.notify(source, 'Compte invalide', 'error');
             return;
         }
         if (account.money < amount) {
-            this.notifier.notify(source, "Pas assez d'argent", "error");
+            this.notifier.notify(source, "Pas assez d'argent", 'error');
             return;
         }
         account.money -= amount;
@@ -96,7 +92,13 @@ export class BankAtmProvider {
     }
 
     @OnEvent(ServerEvent.ATM_REMOVE_LIQUIDITY)
-    public async removeAtmLiquidity(source: number, atmType: string, coords: Vector3, amount: number, value: number): Promise<void> {
+    public async removeAtmLiquidity(
+        source: number,
+        atmType: string,
+        coords: Vector3,
+        amount: number,
+        value: number
+    ): Promise<void> {
         const [account] = this.getAtmAccount(atmType, coords);
         this.bankAccountService.removeMoney(account, amount * value);
     }
@@ -105,7 +107,15 @@ export class BankAtmProvider {
         let account = this.bankAccountService.getAccount(accountName);
         let created = false;
         if (account == null) {
-            account = this.bankAccountService.createAccount(accountName, "bank-atm", "bank-atm", accountName, null, null, coords);
+            account = this.bankAccountService.createAccount(
+                accountName,
+                'bank-atm',
+                'bank-atm',
+                accountName,
+                null,
+                null,
+                coords
+            );
             created = true;
         }
         return [account, created];
@@ -113,7 +123,7 @@ export class BankAtmProvider {
     private getClosestFleeca(coord: Vector3): string {
         let closestBank = null;
         for (const [id, l] of Object.entries(BankPedLocations)) {
-            if (!id.includes("pacific")) {
+            if (!id.includes('pacific')) {
                 const distance = getDistance(l, coord);
                 if (closestBank == null || distance < closestBank.distance) {
                     closestBank = { id, distance };
@@ -127,13 +137,13 @@ export class BankAtmProvider {
         for (const v of coords) {
             formattedCoords.push(Math.floor(v * 100) / 100);
         }
-        return GetHashKey(formattedCoords.join("_"));
+        return GetHashKey(formattedCoords.join('_'));
     }
 
     public getAtmAccountName(atmType: string, atmCoordsHash: number, coords: Vector3): string {
         let atmAccount = null;
         const atmIdentifier = `atm_${atmType}_${atmCoordsHash}`;
-        if (atmType == "ent") {
+        if (atmType == 'ent') {
             return atmIdentifier;
         }
         if (AtmLocations[atmIdentifier] != null) {

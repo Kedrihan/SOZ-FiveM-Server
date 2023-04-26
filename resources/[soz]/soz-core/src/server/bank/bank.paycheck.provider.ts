@@ -1,16 +1,15 @@
+import { Tick, TickInterval } from '@public/core/decorators/tick';
+import { Monitor } from '@public/shared/monitor';
 
 import { Inject } from '../../core/decorators/injectable';
 import { Provider } from '../../core/decorators/provider';
 import { JobService } from '../job.service';
-import { Tick, TickInterval } from '@public/core/decorators/tick';
-import { QBCore } from '../qbcore';
 import { Notifier } from '../notifier';
+import { QBCore } from '../qbcore';
 import { BankAccountService } from './bank.account.service';
-import { Monitor } from '@public/shared/monitor';
 
 @Provider()
 export class BankPaycheckProvider {
-
     @Inject(BankAccountService)
     private bankAccountService: BankAccountService;
 
@@ -37,26 +36,35 @@ export class BankPaycheckProvider {
 
             if (!player.PlayerData.metadata.injail && player.PlayerData.job && payment > 0) {
                 if (!player.PlayerData.job.onduty) {
-                    payment = Math.ceil(payment * 30 / 100);
+                    payment = Math.ceil((payment * 30) / 100);
                 }
-                this.bankAccountService.transferMoney(player.PlayerData.job.id, player.PlayerData.charinfo.account, payment, (success, reason) => {
-                    if (success) {
-                        this.notifier.advancedNotify(playerSource, 'Maze Banque', 'Mouvement bancaire', 'Un versement vient d\'être réalisé sur votre compte', 'CHAR_BANK_MAZE', 'success');
-                        this.monitor.publish("paycheck",
-                            {
-                                player_source: player.PlayerData.source
-                            },
-                            {
-                                amount: payment,
-                            });
-                    }
-                    else {
-                        console.log(reason);
-                    }
-                });
-
+                const [success, reason] = this.bankAccountService.transferMoney(
+                    player.PlayerData.job.id,
+                    player.PlayerData.charinfo.account,
+                    payment
+                );
+                if (success) {
+                    this.notifier.advancedNotify(
+                        playerSource,
+                        'Maze Banque',
+                        'Mouvement bancaire',
+                        "Un versement vient d'être réalisé sur votre compte",
+                        'CHAR_BANK_MAZE',
+                        'success'
+                    );
+                    this.monitor.publish(
+                        'paycheck',
+                        {
+                            player_source: player.PlayerData.source,
+                        },
+                        {
+                            amount: payment,
+                        }
+                    );
+                } else {
+                    console.log(reason);
+                }
             }
-
         }
     }
 }

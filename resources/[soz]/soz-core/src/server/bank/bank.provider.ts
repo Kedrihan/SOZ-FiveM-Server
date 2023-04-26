@@ -5,15 +5,14 @@ import { Rpc } from '@public/core/decorators/rpc';
 import { BankingInformation } from '@public/shared/bank';
 import { ServerEvent } from '@public/shared/event';
 import { JobPermission } from '@public/shared/job';
-import { Monitor } from '@public/shared/monitor';
 import { RpcServerEvent } from '@public/shared/rpc';
 import { groupDigits } from '@public/shared/utils/number';
 
 import { Inject } from '../../core/decorators/injectable';
 import { Provider } from '../../core/decorators/provider';
 import { Notifier } from '../notifier';
+import { PlayerMoneyService } from '../player/player.money.service';
 import { PlayerService } from '../player/player.service';
-import { QBCore } from '../qbcore';
 import { BankAccountService } from './bank.account.service';
 
 @Provider()
@@ -21,17 +20,14 @@ export class BankProvider {
     @Inject(BankAccountService)
     private bankAccountService: BankAccountService;
 
+    @Inject(PlayerMoneyService)
+    private playerMoneyService: PlayerMoneyService;
+
     @Inject(JobPermissionService)
     private jobPermissionService: JobPermissionService;
 
     @Inject(Notifier)
     private notifier: Notifier;
-
-    @Inject(QBCore)
-    private qbCore: QBCore;
-
-    @Inject(Monitor)
-    private monitor: Monitor;
 
     @Inject(PlayerService)
     private playerService: PlayerService;
@@ -80,7 +76,7 @@ export class BankProvider {
                 'offshore_' + account,
                 'Compte offshore ' + account,
                 'offshore',
-                'offshore_' + account
+                'offshore_' + account,
             );
             return [true, ''];
         } else {
@@ -92,13 +88,13 @@ export class BankProvider {
     public async transferOffshoreMoney(
         source: number,
         accountTarget: string,
-        amount: number
+        amount: number,
     ): Promise<[boolean, string]> {
-        const player = this.qbCore.getPlayer(source);
-        const currentMoney = player.Functions.GetMoney('marked_money');
-        if (this.jobPermissionService.hasPermission(player.PlayerData.job.id, JobPermission.SocietyBankAccount)) {
+        const player = this.playerService.getPlayer(source);
+        const currentMoney = player.money.marked_money;
+        if (this.jobPermissionService.hasPermission(player.job.id, JobPermission.SocietyBankAccount)) {
             if (amount <= currentMoney) {
-                if (player.Functions.RemoveMoney('marked_money', amount)) {
+                if (this.playerMoneyService.remove(player.source, amount, 'marked_money')) {
                     this.bankAccountService.addMoney('offshore_' + accountTarget, amount, 'marked_money');
                     return [true, ''];
                 } else {
@@ -116,14 +112,14 @@ export class BankProvider {
         source: number,
         accountSource: string,
         accountTarget: string,
-        amount: number
+        amount: number,
     ): Promise<[boolean, string]> {
-        const player = this.qbCore.getPlayer(source);
-        const currentMoney = player.Functions.GetMoney('money');
+        const player = this.playerService.getPlayer(source);
+        const currentMoney = player.money.money;
 
-        if (accountSource === 'player' && amount <= currentMoney && player.Functions.RemoveMoney('money', amount)) {
+        if (accountSource === 'player') {
             if (amount <= currentMoney) {
-                if (player.Functions.RemoveMoney('money', amount)) {
+                if (this.playerMoneyService.remove(player.source, amount, 'money')) {
                     this.bankAccountService.addMoney(accountTarget, amount);
                     return [true, ''];
                 }
@@ -131,7 +127,7 @@ export class BankProvider {
         } else if (accountTarget === 'player') {
             const accountMoney = this.bankAccountService.getAccount(accountSource).money;
             if (amount <= accountMoney) {
-                if (player.Functions.AddMoney('money', amount)) {
+                if (this.playerMoneyService.add(player.source, amount, 'money')) {
                     this.bankAccountService.removeMoney(accountSource, amount);
                     return [true, ''];
                 }
@@ -147,18 +143,18 @@ export class BankProvider {
         safeStorage: any,
         amount: number,
         money_type: 'money' | 'marked_money',
-        allowOverflow?: boolean
+        allowOverflow?: boolean,
     ): Promise<boolean> {
         return this.bankAccountService.addMoney(safeStorage, amount, money_type, allowOverflow);
     }
 
     @Rpc(RpcServerEvent.BANK_TRANSFER_CASH_MONEY)
     public async transferCashMoney(source: number, target: number, amount: number): Promise<[boolean, string]> {
-        const player = this.qbCore.getPlayer(source);
+        const player = this.playerService.getPlayer(source);
 
         const currentMoney = this.bankAccountService.getAccount(source).money;
         if (amount <= currentMoney) {
-            if (player.Functions.AddMoney('money', amount)) {
+            if (this.playerMoneyService.remove(player.source, amount, 'money')) {
                 this.bankAccountService.removeMoney(source, amount);
                 return [true, ''];
             } else {
@@ -213,20 +209,21 @@ export class BankProvider {
         source: number,
         money_type: 'money' | 'marked_money',
         safeStorage: any,
-        amount: number
+        amount: number,
     ): Promise<void> {
-        const player = this.qbCore.getPlayer(source);
-        const currentMoney = player.Functions.GetMoney(money_type);
+        const player = this.playerService.getPlayer(source);
+        const currentMoney = player.money[money_type];
         if (amount > currentMoney) {
             this.notifier.notify(source, "Vous n'avez pas assez d'argent", 'error');
             return;
         }
-        if (player.Functions.RemoveMoney(money_type, amount)) {
+
+        if (this.playerMoneyService.remove(player.source, amount, money_type)) {
             const added = this.bankAccountService.addMoney(safeStorage, amount, money_type);
             if (added) {
                 this.notifier.notify(source, `Vous avez déposé ~g~$${amount}`);
             } else {
-                player.Functions.AddMoney(money_type, amount);
+                this.playerMoneyService.add(player.source, amount, money_type);
                 this.notifier.notify(source, "Le coffre n'a plus de place", 'error');
             }
         }
@@ -237,15 +234,15 @@ export class BankProvider {
         source: number,
         money_type: 'money' | 'marked_money',
         safeStorage: any,
-        amount: number
+        amount: number,
     ): Promise<void> {
-        const player = this.qbCore.getPlayer(source);
+        const player = this.playerService.getPlayer(source);
         const currentMoney = this.bankAccountService.getMoney(safeStorage, money_type);
         if (amount > currentMoney) {
             this.notifier.notify(source, "Vous n'avez pas assez d'argent", 'error');
             return;
         }
-        if (player.Functions.AddMoney(money_type, amount)) {
+        if (this.playerMoneyService.add(player.source, amount, money_type)) {
             this.bankAccountService.removeMoney(safeStorage, amount, money_type);
             this.notifier.notify(source, `Vous avez retiré ~g~$${amount}`);
         }
