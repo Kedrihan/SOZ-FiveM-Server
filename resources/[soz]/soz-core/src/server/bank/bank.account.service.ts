@@ -30,7 +30,7 @@ export class BankAccountService {
         owner: string,
         money = 0,
         marked_money = 0,
-        coords = null
+        coords = null,
     ): BankAccount {
         if (this.AccountType[account_type] === undefined) {
             console.log('Account type not valid !');
@@ -83,12 +83,8 @@ export class BankAccountService {
         return account[money_type];
     }
 
-    public addMoney(acc: any, money: number, money_type: string | null = null, allowOverflow = false): boolean {
+    public addMoney(acc: any, money: number, money_type = 'money', allowOverflow = false): boolean {
         const account = this.getAccount(acc);
-
-        if (money_type === null) {
-            money_type = 'money';
-        }
 
         const total = Math.ceil(account[money_type] + money - 0.5);
         if (
@@ -104,24 +100,19 @@ export class BankAccountService {
         return true;
     }
 
-    public removeMoney(acc: any, money: number, money_type = 'money'): [boolean, string] | boolean {
+    public removeMoney(acc: any, money: number, money_type = 'money'): [boolean, string] {
         const account = this.getAccount(acc);
 
         if (account[money_type] - money >= 0) {
             account[money_type] = Math.ceil(account[money_type] - money - 0.5);
             account.changed = true;
-            return true;
+            return [true, ''];
         } else {
             return [false, 'no_account_money'];
         }
     }
 
-    public transferMoney(
-        accSource: any,
-        accTarget: any,
-        money: number,
-        cb?: (success: boolean, reason: string | null) => void
-    ): void {
+    public transferMoney(accSource: any, accTarget: any, money: number): [boolean, string] {
         const sourceAccount = this.getAccount(accSource);
         const targetAccount = this.getAccount(accTarget);
         const roundMoney = Math.round(money);
@@ -139,10 +130,7 @@ export class BankAccountService {
                         success = false;
                         reason = 'transfer_failed';
 
-                        if (cb) {
-                            cb(success, reason);
-                        }
-                        return;
+                        return [success, reason];
                     }
 
                     if (this.removeMoney(accSource, roundMoney) && this.addMoney(accTarget, roundMoney)) {
@@ -150,13 +138,13 @@ export class BankAccountService {
                             sourceAccount.id,
                             sourceAccount.owner,
                             sourceAccount.money,
-                            sourceAccount.marked_money
+                            sourceAccount.marked_money,
                         );
                         this.AccountType[targetAccount.type].save(
                             targetAccount.id,
                             targetAccount.owner,
                             targetAccount.money,
-                            targetAccount.marked_money
+                            targetAccount.marked_money,
                         );
 
                         success = true;
@@ -177,9 +165,7 @@ export class BankAccountService {
             reason = 'invalid_account';
         }
 
-        if (cb) {
-            cb(success, reason);
-        }
+        return [success, reason];
     }
 
     public accessGranted(acc: any, playerId: number): boolean {
