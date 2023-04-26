@@ -8,12 +8,7 @@ class _InvoicesService {
 
     async handleFetchInvoices(reqObj: PromiseRequest<void>, resp: PromiseEventResp<InvoiceItem[]>) {
         try {
-            let invoices = exports['soz-bank'].GetAllInvoicesForPlayer(reqObj.source);
-
-            if (!Array.isArray(invoices)) {
-                invoices = Object.values(invoices);
-            }
-
+            const invoices = await emitNet('soz-core:server:bank:getAllPlayerInvoices', reqObj.source);
             resp({ status: 'ok', data: invoices });
         } catch (e) {
             invoicesLogger.error(`Error in handleFetchInvoices, ${e.toString()}`);
@@ -24,6 +19,7 @@ class _InvoicesService {
     async handlePayInvoice(reqObj: PromiseRequest<number>, resp: PromiseEventResp<void>) {
         try {
             exports['soz-bank'].PayInvoice(reqObj.source, reqObj.data);
+            await emitNet('soz-core:server:bank:getAllPlayerInvoices', reqObj.source);
             resp({ status: 'ok' });
         } catch (e) {
             invoicesLogger.error(`Error in handlePayInvoice, ${e.toString()}`);

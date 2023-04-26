@@ -235,4 +235,15 @@ export class BankAccountService {
     public getAllAccountTypes(): Record<string, any> {
         return this.AccountType;
     }
+
+    public saveAccounts(): void {
+        for (const account of this.getAllAccounts()) {
+            if (account.changed) {
+                const accountType = this.getAllAccountTypes()[account.type];
+                if (accountType.save(account.id, account.owner, account.money, account.marked_money)) {
+                    account.changed = false;
+                }
+            }
+        }
+    }
 }

@@ -6,6 +6,7 @@ import { Logger } from '../../core/logger';
 import { uuidv4, wait } from '../../core/utils';
 import { ClientEvent, ServerEvent } from '../../shared/event';
 import { Feature, isFeatureEnabled } from '../../shared/features';
+import { BankAccountService } from '../bank/bank.account.service';
 import { PrismaService } from '../database/prisma.service';
 import { PlayerCleanService } from '../player/player.clean.service';
 import { QBCore } from '../qbcore';
@@ -30,6 +31,9 @@ export class RebootProvider {
 
     @Inject(PlayerCleanService)
     private playerCleanService: PlayerCleanService;
+
+    @Inject(BankAccountService)
+    private bankAccountService: BankAccountService;
 
     @Inject(Logger)
     private logger: Logger;
@@ -91,7 +95,7 @@ export class RebootProvider {
             },
         });
 
-        exports['soz-bank'].saveAccounts();
+        this.bankAccountService.saveAccounts();
         exports['soz-upw'].saveUpw();
         exports['soz-inventory'].saveInventories();
         exports['soz-inventory'].stopSyncInventories();

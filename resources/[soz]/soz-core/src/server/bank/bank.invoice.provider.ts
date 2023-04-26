@@ -137,6 +137,7 @@ export class BankInvoiceProvider {
             return;
         }
         for (const [account, invoices] of Object.entries(this.Invoices)) {
+
             for (const [id, _] of Object.entries(invoices)) {
                 if (Number(id) === invoiceId) {
                     await this.payInvoice(player, account, invoiceId);

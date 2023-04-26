@@ -38,7 +38,7 @@ export class BankAccountProvider {
                     account.citizenid,
                     account.account_type,
                     account.citizenid,
-                    Number(account.money)
+                    Number(account.money),
                 );
             } else if (account.account_type === 'business') {
                 this.bankAccountService.createAccount(
@@ -46,7 +46,7 @@ export class BankAccountProvider {
                     allJobs[account.businessid].label,
                     account.account_type,
                     account.businessid,
-                    Number(account.money)
+                    Number(account.money),
                 );
                 EnterpriseAccountNotLoaded[account.businessid] = null;
             } else if (account.account_type === 'safestorages') {
@@ -57,7 +57,7 @@ export class BankAccountProvider {
                         'house_safe',
                         account.houseid,
                         Number(account.money),
-                        Number(account.marked_money)
+                        Number(account.marked_money),
                     );
                 } else {
                     this.bankAccountService.createAccount(
@@ -66,7 +66,7 @@ export class BankAccountProvider {
                         account.account_type,
                         account.businessid,
                         Number(account.money),
-                        Number(account.marked_money)
+                        Number(account.marked_money),
                     );
                     EnterpriseSafeNotLoaded[account.businessid] = null;
                 }
@@ -77,7 +77,7 @@ export class BankAccountProvider {
                     account.account_type,
                     account.businessid,
                     Number(account.money),
-                    Number(account.marked_money)
+                    Number(account.marked_money),
                 );
             } else if (account.account_type === 'bank_atm') {
                 this.bankAccountService.createAccount(
@@ -87,7 +87,7 @@ export class BankAccountProvider {
                     account.businessid,
                     Number(account.money),
                     Number(account.marked_money),
-                    account.coords
+                    account.coords,
                 );
                 if (account.businessid.match('bank_%w+')) {
                     const bank = account.businessid.match('%a+%d')[0];
@@ -129,7 +129,7 @@ export class BankAccountProvider {
                 player.charinfo.account,
                 player.name,
                 'player',
-                player.citizenid
+                player.citizenid,
             );
         }
     }
@@ -137,20 +137,13 @@ export class BankAccountProvider {
     @On('onResourceStop')
     public async onResourceStop(resource: string) {
         if (resource === GetCurrentResourceName()) {
-            this.saveAccounts();
+            this.bankAccountService.saveAccounts();
         }
     }
 
     @Tick(TickInterval.EVERY_MINUTE)
     public async saveAccounts(): Promise<void> {
-        for (const account of this.bankAccountService.getAllAccounts()) {
-            if (account.changed) {
-                const accountType = this.bankAccountService.getAllAccountTypes()[account.type];
-                if (accountType.save(account.id, account.owner, account.money, account.marked_money)) {
-                    account.changed = false;
-                }
-            }
-        }
+        this.bankAccountService.saveAccounts();
     }
 
     @Rpc(RpcServerEvent.BANK_GET_TERMINAL_TYPE)
