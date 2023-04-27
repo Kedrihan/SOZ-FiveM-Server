@@ -16,14 +16,17 @@ Citizen.CreateThread(function()
 
                         remainingItemToProcess = remainingItemToProcess - itemAmount
 
-                        if exports["soz-inventory"]:RemoveItem(GarbageConfig.Processing.ProcessingStorage, item.item.name, itemAmount) then
-                            local resellPrice = GarbageConfig.SellPrice[item.item.name] or GarbageConfig.SellPrice["default"]
+                        if exports["soz-inventory"]:RemoveItem(GarbageConfig.Processing.ProcessingStorage,
+                                                               item.item.name, itemAmount) then
+                            local resellPrice = GarbageConfig.SellPrice[item.item.name] or
+                                                    GarbageConfig.SellPrice["default"]
 
-                            TriggerEvent("banking:server:TransferMoney", "farm_garbage", "safe_garbage", itemAmount * resellPrice)
-                            TriggerEvent("monitor:server:event", "job_bluebird_recycling_garbage_bag", {
-                                item = item.item.name,
-                            }, {quantity = tonumber(itemAmount)})
+                            TriggerEvent("soz-core:server:bank:transferMoney", "farm_garbage", "safe_garbage",
+                                         itemAmount * resellPrice)
+                            TriggerEvent("monitor:server:event", "job_bluebird_recycling_garbage_bag",
+                                         {item = item.item.name}, {quantity = tonumber(itemAmount)})
                         end
+
                     end
                 end
             end

@@ -1,4 +1,8 @@
 import { Injectable } from '@core/decorators/injectable';
+
+import { emitQBRpc } from '@core/rpc';
+import { Invoice } from '@public/shared/bank';
+import { ServerEvent } from '@public/shared/event';
 import { getLocationHash } from '@public/shared/locationhash';
 import { Vector3 } from '@public/shared/polyzone/vector';
 import { Err, Ok, Result } from '@public/shared/result';
@@ -7,7 +11,7 @@ import { Err, Ok, Result } from '@public/shared/result';
 export class BankService {
     // TODO: Enforce better type for source and target
     public transferBankMoney(source: string, target: string, amount: number): Promise<[boolean, string]> {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
             exports['soz-bank'].TransferMoney(source, target, amount, (success, reason) => {
                 resolve([success, reason]);
             });
@@ -16,7 +20,7 @@ export class BankService {
 
     // TODO: Enforce better type for source and target
     public transferCashMoney(source: string, target: number, amount: number): Promise<Result<boolean, string>> {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
             exports['soz-bank'].TransferCashMoney(source, target, amount, (success, reason) => {
                 if (success) {
                     resolve(Ok(true));
@@ -40,11 +44,6 @@ export class BankService {
 
     public removeLiquidityRatio(entity: number, type: string, value: number) {
         const coords = GetEntityCoords(entity);
-        TriggerServerEvent(
-            'banking:server:RemoveAtmLiquidityRatio',
-            { x: coords[0], y: coords[1], z: coords[2] },
-            type,
-            value
-        );
+        TriggerServerEvent(ServerEvent.ATM_REMOVE_LIQUIDITY, { x: coords[0], y: coords[1], z: coords[2] }, type, value);
     }
 }

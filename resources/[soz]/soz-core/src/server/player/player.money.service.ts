@@ -1,3 +1,4 @@
+import { ServerEvent } from '@public/shared/event';
 import { Inject, Injectable } from '../../core/decorators/injectable';
 import { QBCore } from '../qbcore';
 
@@ -21,7 +22,7 @@ export class PlayerMoneyService {
         timeout = 10000
     ): Promise<boolean> {
         const promise = new Promise<boolean>(resolve => {
-            TriggerEvent('banking:server:TransferMoney', sourceAccount, targetAccount, amount, (success: boolean) => {
+            TriggerEvent(ServerEvent.BANK_TRANSFER_MONEY, sourceAccount, targetAccount, amount, (success: boolean) => {
                 resolve(success);
             });
         });

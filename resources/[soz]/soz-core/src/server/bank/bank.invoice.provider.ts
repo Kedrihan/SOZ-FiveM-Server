@@ -18,6 +18,7 @@ import { Notifier } from '../notifier';
 import { PlayerMoneyService } from '../player/player.money.service';
 import { PlayerService } from '../player/player.service';
 import { BankAccountService } from './bank.account.service';
+import { Exportable } from '@public/core/decorators/exports';
 
 @Provider()
 export class BankInvoiceProvider {
@@ -67,20 +68,6 @@ export class BankInvoiceProvider {
             this.Invoices[invoice.targetAccount] = this.Invoices[invoice.targetAccount] || {};
             this.Invoices[invoice.targetAccount][invoice.id] = invoice;
         }
-    }
-
-    @Rpc(RpcServerEvent.BANK_GET_ALL_PLAYER_INVOICES)
-    public async onGetAllPlayerInvoices(source: number): Promise<Record<number, Invoice>> {
-        const player = this.playerService.getPlayer(source);
-        if (player === null) {
-            return null;
-        }
-        for (const [account, invoices] of Object.entries(this.Invoices)) {
-            if (this.playerHaveAccessToInvoices(player, account)) {
-                return invoices;
-            }
-        }
-        return null;
     }
 
     @OnEvent(ServerEvent.BANK_SEND_INVOICE)
@@ -162,6 +149,20 @@ export class BankInvoiceProvider {
             }
         }
         this.notifier.notify(source, "Vous n'avez pas de facture à payer", 'info');
+    }
+
+    @Exportable('GetAllPlayerInvoices')
+    public async onGetAllPlayerInvoices(source: number): Promise<Record<number, Invoice>> {
+        const player = this.playerService.getPlayer(source);
+        if (player === null) {
+            return null;
+        }
+        for (const [account, invoices] of Object.entries(this.Invoices)) {
+            if (this.playerHaveAccessToInvoices(player, account)) {
+                return invoices;
+            }
+        }
+        return null;
     }
 
     private async payInvoice(player: PlayerData, account: string, id: number): Promise<void> {

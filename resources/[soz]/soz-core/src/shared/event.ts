@@ -130,7 +130,6 @@ export enum ServerEvent {
     ADMIN_CREATE_CHARACTER = 'soz-core:server:admin:create-character',
     ADMIN_SWITCH_CHARACTER = 'soz-core:server:admin:switch-character',
 
-    BANKING_TRANSFER_MONEY = 'banking:server:TransferMoney',
     CHARACTER_SET_JOB_CLOTHES = 'soz-character:server:SetPlayerJobClothes',
     QBCORE_CALL_COMMAND = 'QBCore:CallCommand',
     QBCORE_TOGGLE_DUTY = 'QBCore:ToggleDuty',
@@ -231,6 +230,7 @@ export enum ServerEvent {
     BANK_ACCEPT_INVOICE = 'soz-core:server:bank:acceptInvoice',
     BANK_SAFE_DEPOSIT = 'soz-core:server:bank:safeStorageDeposit',
     BANK_SAFE_WITHDRAW = 'soz-core:server:bank:safeStorageWithdraw',
+    BANK_TRANSFER_MONEY = 'soz-core:server:bank:transferMoney',
     ATM_REMOVE_LIQUIDITY = 'soz-core:server:bank:removeAtmLiquidity',
 
 }
@@ -395,10 +395,10 @@ export enum ClientEvent {
     BANK_ENTER_LOCATION = 'locations:zone:enter',
     BANK_EXIT_LOCATION = 'locations:zone:exit',
 
-    ATM_DISPLAY_BLIPS = 'soz-core:client:banking:displayAtmBlips',
-    BANK_INVOICE_REJECTED = 'soz-core:client:banking:invoiceRejected',
-    BANK_INVOICE_RECEIVED = 'soz-core:client:banking:invoiceReceived',
-    BANK_INVOICE_PAID = 'soz-core:client:banking:invoicePaid',
+    ATM_DISPLAY_BLIPS = 'soz-core:client:bank:displayAtmBlips',
+    BANK_INVOICE_REJECTED = 'soz-core:client:bank:invoiceRejected',
+    BANK_INVOICE_RECEIVED = 'soz-core:client:bank:invoiceReceived',
+    BANK_INVOICE_PAID = 'soz-core:client:bank:invoicePaid',
 }
 
 export enum GameEvent {

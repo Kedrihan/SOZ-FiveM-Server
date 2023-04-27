@@ -94,8 +94,8 @@ export class BankAtmProvider {
     @OnEvent(ServerEvent.ATM_REMOVE_LIQUIDITY)
     public async removeAtmLiquidity(
         source: number,
-        atmType: string,
         coords: Vector3,
+        atmType: string,
         amount: number,
         value: number
     ): Promise<void> {

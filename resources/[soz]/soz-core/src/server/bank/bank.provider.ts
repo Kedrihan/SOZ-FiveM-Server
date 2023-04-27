@@ -14,6 +14,7 @@ import { Notifier } from '../notifier';
 import { PlayerMoneyService } from '../player/player.money.service';
 import { PlayerService } from '../player/player.service';
 import { BankAccountService } from './bank.account.service';
+import { Exportable } from '@public/core/decorators/exports';
 
 @Provider()
 export class BankProvider {
@@ -138,16 +139,6 @@ export class BankProvider {
         return [false, 'unknown'];
     }
 
-    @Rpc(RpcServerEvent.BANK_ADD_MONEY)
-    public async addMoney(
-        safeStorage: any,
-        amount: number,
-        money_type: 'money' | 'marked_money',
-        allowOverflow?: boolean,
-    ): Promise<boolean> {
-        return this.bankAccountService.addMoney(safeStorage, amount, money_type, allowOverflow);
-    }
-
     @Rpc(RpcServerEvent.BANK_TRANSFER_CASH_MONEY)
     public async transferCashMoney(source: number, target: number, amount: number): Promise<[boolean, string]> {
         const player = this.playerService.getPlayer(source);
@@ -197,7 +188,7 @@ export class BankProvider {
         }
     }
 
-    @Rpc(RpcServerEvent.BANK_GET_PLAYER_ACCOUNT)
+    @Exportable('GetPlayerAccount')
     public async getPlayerAccount(source: number): Promise<any> {
         const player = this.playerService.getPlayer(source);
         const account = this.bankAccountService.getAccount(player.charinfo.account);
@@ -246,5 +237,10 @@ export class BankProvider {
             this.bankAccountService.removeMoney(safeStorage, amount, money_type);
             this.notifier.notify(source, `Vous avez retiré ~g~$${amount}`);
         }
+    }
+
+    @OnEvent(ServerEvent.BANK_TRANSFER_MONEY)
+    public async onTransferMoney(accountSource: string, accountTarget: string, amount: number): Promise<void> {
+        this.bankAccountService.transferMoney(accountSource, accountTarget, amount);
     }
 }

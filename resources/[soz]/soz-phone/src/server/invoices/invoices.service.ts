@@ -8,8 +8,7 @@ class _InvoicesService {
 
     async handleFetchInvoices(reqObj: PromiseRequest<void>, resp: PromiseEventResp<InvoiceItem[]>) {
         try {
-            const invoices = await emitNet('soz-core:server:bank:getAllPlayerInvoices', reqObj.source);
-            resp({ status: 'ok', data: invoices });
+            resp({ status: 'ok', data: exports['soz-core'].GetAllInvoicesForPlayer(reqObj.source) });
         } catch (e) {
             invoicesLogger.error(`Error in handleFetchInvoices, ${e.toString()}`);
             resp({ status: 'error', errorMsg: 'DB_ERROR' });
@@ -20,6 +19,7 @@ class _InvoicesService {
         try {
             exports['soz-bank'].PayInvoice(reqObj.source, reqObj.data);
             await emitNet('soz-core:server:bank:getAllPlayerInvoices', reqObj.source);
+
             resp({ status: 'ok' });
         } catch (e) {
             invoicesLogger.error(`Error in handlePayInvoice, ${e.toString()}`);
@@ -29,7 +29,7 @@ class _InvoicesService {
 
     async handleRefuseInvoice(reqObj: PromiseRequest<number>, resp: PromiseEventResp<void>) {
         try {
-            exports['soz-bank'].RejectInvoice(reqObj.source, reqObj.data);
+            emitNet('soz-core:server:bank:rejectInvoice', reqObj.source, reqObj.data);
             resp({ status: 'ok' });
         } catch (e) {
             invoicesLogger.error(`Error in handleRefuseInvoice, ${e.toString()}`);

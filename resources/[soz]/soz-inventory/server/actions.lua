@@ -27,12 +27,14 @@ RegisterNetEvent("inventory:server:UseItemSlot", function(slot)
         return
     end
 
-    if Player.PlayerData.metadata["isdead"] or Player.PlayerData.metadata["ishandcuffed"] or Player.PlayerData.metadata["inlaststand"] then
+    if Player.PlayerData.metadata["isdead"] or Player.PlayerData.metadata["ishandcuffed"] or
+        Player.PlayerData.metadata["inlaststand"] then
         return
     end
 
     if ply.state.inv_busy then
-        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Une action est déjà en cours !", "warning")
+        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Une action est déjà en cours !",
+                           "warning")
         return
     end
 
@@ -54,13 +56,15 @@ end)
 RegisterServerEvent("inventory:server:GiveItem", function(target, item, amount)
     local Player = QBCore.Functions.GetPlayer(source)
     local Target = QBCore.Functions.GetPlayer(tonumber(target))
-    local dist = #(GetEntityCoords(GetPlayerPed(Player.PlayerData.source)) - GetEntityCoords(GetPlayerPed(Target.PlayerData.source)))
+    local dist = #(GetEntityCoords(GetPlayerPed(Player.PlayerData.source)) -
+                     GetEntityCoords(GetPlayerPed(Target.PlayerData.source)))
 
     if Player.PlayerData.source == Target.PlayerData.source then
         return
     end
     if dist > 2 then
-        return TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Personne n'est à portée de vous", "error")
+        return TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                                  "Personne n'est à portée de vous", "error")
     end
 
     if amount <= item.amount then
@@ -68,20 +72,26 @@ RegisterServerEvent("inventory:server:GiveItem", function(target, item, amount)
             amount = item.amount
         end
 
-        Inventory.TransfertItem(Player.PlayerData.source, Target.PlayerData.source, item.name, amount, item.metadata, item.slot, function(success, reason)
+        Inventory.TransfertItem(Player.PlayerData.source, Target.PlayerData.source, item.name, amount, item.metadata,
+                                item.slot, function(success, reason)
             if success then
-                TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, string.format("Vous avez donné ~o~%s ~b~%s", amount, item.label))
-                TriggerClientEvent("hud:client:DrawNotification", Target.PlayerData.source, string.format("Vous avez reçu ~o~%s ~b~%s", amount, item.label))
+                TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                                   string.format("Vous avez donné ~o~%s ~b~%s", amount, item.label))
+                TriggerClientEvent("hud:client:DrawNotification", Target.PlayerData.source,
+                                   string.format("Vous avez reçu ~o~%s ~b~%s", amount, item.label))
 
                 giveAnimation(Player.PlayerData.source)
                 giveAnimation(Target.PlayerData.source)
             else
-                TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Vous ne pouvez pas donner cet objet !", "error")
-                TriggerClientEvent("hud:client:DrawNotification", Target.PlayerData.source, "Vous ne pouvez pas recevoir d'objet !", "error")
+                TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                                   "Vous ne pouvez pas donner cet objet !", "error")
+                TriggerClientEvent("hud:client:DrawNotification", Target.PlayerData.source,
+                                   "Vous ne pouvez pas recevoir d'objet !", "error")
             end
         end)
     else
-        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Vous ne possédez pas le nombre d'items requis pour le transfert", "error")
+        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                           "Vous ne possédez pas le nombre d'items requis pour le transfert", "error")
     end
 end)
 
@@ -104,13 +114,15 @@ RegisterServerEvent("inventory:server:GiveMoney", function(target, moneyType, am
 
     local Player = QBCore.Functions.GetPlayer(source)
     local Target = QBCore.Functions.GetPlayer(tonumber(target))
-    local dist = #(GetEntityCoords(GetPlayerPed(Player.PlayerData.source)) - GetEntityCoords(GetPlayerPed(Target.PlayerData.source)))
+    local dist = #(GetEntityCoords(GetPlayerPed(Player.PlayerData.source)) -
+                     GetEntityCoords(GetPlayerPed(Target.PlayerData.source)))
 
     if Player.PlayerData.source == Target.PlayerData.source then
         return
     end
     if dist > 2 then
-        return TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Personne n'est à portée de vous", "error")
+        return TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                                  "Personne n'est à portée de vous", "error")
     end
 
     local moneyAmount = Player.Functions.GetMoney("money")
@@ -141,13 +153,16 @@ RegisterServerEvent("inventory:server:GiveMoney", function(target, moneyType, am
         Target.Functions.AddMoney("money", moneyTake)
         Target.Functions.AddMoney("marked_money", markedMoneyTake)
 
-        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, string.format("Vous avez donné ~r~%s$", amount))
-        TriggerClientEvent("hud:client:DrawNotification", Target.PlayerData.source, string.format("Vous avez reçu ~g~%s$", amount))
+        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                           string.format("Vous avez donné ~r~%s$", amount))
+        TriggerClientEvent("hud:client:DrawNotification", Target.PlayerData.source,
+                           string.format("Vous avez reçu ~g~%s$", amount))
 
         giveAnimation(Player.PlayerData.source)
         giveAnimation(Target.PlayerData.source)
     else
-        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Vous ne possédez pas l'argent requis pour le transfert", "error")
+        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                           "Vous ne possédez pas l'argent requis pour le transfert", "error")
     end
 end)
 
@@ -159,20 +174,24 @@ RegisterServerEvent("inventory:server:ResellItem", function(item, amount, resell
     local Player = QBCore.Functions.GetPlayer(source)
 
     if amount <= 0 then
-        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Vous n'avez rien à vendre", "error")
+        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Vous n'avez rien à vendre",
+                           "error")
         return
     elseif amount > item.amount then
         amount = item.amount
     end
 
     if item.metadata.expiration ~= nil and exports["soz-utils"]:ItemIsExpired(item) then
-        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Vous ne pouvez pas revendre des produits périmés", "error")
+        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                           "Vous ne pouvez pas revendre des produits périmés", "error")
         return
     end
 
     local itemSpec = QBCore.Shared.Items[item.name]
-    if itemSpec == nil or not itemSpec.resellPrice or not itemSpec.resellZone or itemSpec.resellZone ~= resellZone.ZoneName then
-        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, "Cet item ne peut pas être revendu", "error")
+    if itemSpec == nil or not itemSpec.resellPrice or not itemSpec.resellZone or itemSpec.resellZone ~=
+        resellZone.ZoneName then
+        TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                           "Cet item ne peut pas être revendu", "error")
         return
     end
 
@@ -192,7 +211,8 @@ RegisterServerEvent("inventory:server:ResellItem", function(item, amount, resell
             local availableAmount = math.floor(Inventory.CalculateAvailableWeight("cabinet_storage") / itemSpec.weight)
             if availableAmount > 0 then
                 Inventory.AddItem("cabinet_storage", item.name, availableAmount, {}, nil, nil)
-                msg = string.format("%s meuble(s) ajouté(s) au stock Zkea. Le stock est maintenant plein.", availableAmount)
+                msg = string.format("%s meuble(s) ajouté(s) au stock Zkea. Le stock est maintenant plein.",
+                                    availableAmount)
             else
                 msg = string.format("Aucun meuble ajouté au stock Zkea. Le stock est déjà plein.", availableAmount)
             end
@@ -206,6 +226,8 @@ RegisterServerEvent("inventory:server:ResellItem", function(item, amount, resell
         price = itemSpec.resellPrice[item.metadata.tier] or 1
     end
 
-    TriggerEvent("banking:server:TransferMoney", resellZone.SourceAccount, resellZone.TargetAccount, math.ceil(price) * amount)
-    TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source, string.format("Vous avez vendu ~o~%s ~b~%s", amount, itemSpec.label))
+    TriggerEvent("soz-core:server:bank:transferMoney", resellZone.SourceAccount, resellZone.TargetAccount,
+                 math.ceil(price) * amount)
+    TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
+                       string.format("Vous avez vendu ~o~%s ~b~%s", amount, itemSpec.label))
 end)

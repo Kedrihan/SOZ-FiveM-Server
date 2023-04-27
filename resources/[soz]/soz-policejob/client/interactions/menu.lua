@@ -56,7 +56,8 @@ local function BadgeEntity(menu)
             local boneIndex = GetPedBoneIndex(ped, 28422)
 
             SetNetworkIdCanMigrate(ObjToNet(badgeProp), false)
-            AttachEntityToEntity(badgeProp, ped, boneIndex, 0.065, 0.029, -0.035, 80.0, -1.90, 75.0, true, true, false, true, 1, true)
+            AttachEntityToEntity(badgeProp, ped, boneIndex, 0.065, 0.029, -0.035, 80.0, -1.90, 75.0, true, true, false,
+                                 true, 1, true)
             QBCore.Functions.RequestAnimDict("paper_1_rcm_alt1-9")
             TaskPlayAnim(ped, "paper_1_rcm_alt1-9", "player_one_dual-9", 8.0, -8, 10.0, 49, 0, 0, 0, 0)
 
@@ -122,7 +123,8 @@ local function WantedEntity(menu, job)
                         return
                     end
 
-                    TriggerServerEvent("phone:app:news:createNewsBroadcast", "phone:app:news:createNewsBroadcast:" .. QBCore.Shared.UuidV4(),
+                    TriggerServerEvent("phone:app:news:createNewsBroadcast",
+                                       "phone:app:news:createNewsBroadcast:" .. QBCore.Shared.UuidV4(),
                                        {type = job, message = name})
                     menu:Close()
                 end,
@@ -135,9 +137,12 @@ local function WantedEntity(menu, job)
                     description = "Retirer la personne de la liste",
                     value = wantedPlayer.id,
                     select = function()
-                        local deletion = QBCore.Functions.TriggerRpc("police:server:DeleteWantedPlayer", wantedPlayer.id)
+                        local deletion = QBCore.Functions
+                                             .TriggerRpc("police:server:DeleteWantedPlayer", wantedPlayer.id)
                         if deletion then
-                            exports["soz-hud"]:DrawNotification("Vous avez retiré ~b~" .. wantedPlayer.message .. " ~s~de la liste des personnes recherchées")
+                            exports["soz-hud"]:DrawNotification(
+                                "Vous avez retiré ~b~" .. wantedPlayer.message ..
+                                    " ~s~de la liste des personnes recherchées")
                             menu:Close()
                         end
                     end,
@@ -176,8 +181,8 @@ PoliceJob.Functions.Menu.GenerateMenu = function(job, cb)
     --- Interaction menu can be a submenu, so we need to ensure that something is different.
     --- If it's the case, then we can open the new menu, if not then we want to close it.
     --- The best solution could be to not use a submenu or at least change the UUID for a submenu.
-    if MenuV.CurrentMenu == nil or MenuV.CurrentMenu.UUID ~= menu.UUID or MenuV.CurrentMenu.Subtitle ~= menu.Subtitle or MenuV.CurrentMenu.Items ~= menu.Items or
-        not menu.IsOpen then
+    if MenuV.CurrentMenu == nil or MenuV.CurrentMenu.UUID ~= menu.UUID or MenuV.CurrentMenu.Subtitle ~= menu.Subtitle or
+        MenuV.CurrentMenu.Items ~= menu.Items or not menu.IsOpen then
         MenuV:CloseAll(function()
             menu:Open()
         end)
@@ -201,7 +206,8 @@ PoliceJob.Functions.Menu.GenerateJobMenu = function(job)
                         return
                     end
 
-                    TriggerServerEvent("phone:app:news:createNewsBroadcast", "phone:app:news:createNewsBroadcast:" .. QBCore.Shared.UuidV4(), {
+                    TriggerServerEvent("phone:app:news:createNewsBroadcast",
+                                       "phone:app:news:createNewsBroadcast:" .. QBCore.Shared.UuidV4(), {
                         type = PlayerData.job.id,
                         message = message,
                         reporter = PlayerData.charinfo.firstname .. " " .. PlayerData.charinfo.lastname,
@@ -244,8 +250,7 @@ PoliceJob.Functions.Menu.GenerateInvoiceMenu = function(job, targetPlayer)
                 end
 
                 local ped = PlayerPedId()
-                QBCore.Functions.Progressbar("job:police:fines", "Rédaction de l'amende", 5000, false, true,
-                                             {
+                QBCore.Functions.Progressbar("job:police:fines", "Rédaction de l'amende", 5000, false, true, {
                     disableMovement = false,
                     disableCarMovement = true,
                     disableMouse = false,
@@ -262,7 +267,8 @@ PoliceJob.Functions.Menu.GenerateInvoiceMenu = function(job, targetPlayer)
                     rotation = {x = -120.0, y = 0.0, z = 0.0},
                 }, function() -- Done
                     if #(GetEntityCoords(ped) - GetEntityCoords(GetPlayerPed(player))) < 2.5 then
-                        TriggerServerEvent("banking:server:sendInvoice", GetPlayerServerId(player), title, amount, "fine")
+                        TriggerServerEvent("soz-core:server:bank:sendInvoice", GetPlayerServerId(player), title, amount,
+                                           "fine")
                     else
                         exports["soz-hud"]:DrawNotification("Personne n'est à portée de vous", "error")
                     end
@@ -289,8 +295,11 @@ PoliceJob.Functions.Menu.GenerateInvoiceMenu = function(job, targetPlayer)
                         local ped = PlayerPedId()
                         local fineAmount
                         if type(fine.price) == "table" then
-                            fineAmount = exports["soz-hud"]:Input(("Montant de l'amende ($%d - $%d)"):format(fine.price.min, fine.price.max), 10)
-                            if fineAmount == nil or tonumber(fineAmount) < fine.price.min or tonumber(fineAmount) > fine.price.max then
+                            fineAmount = exports["soz-hud"]:Input(
+                                             ("Montant de l'amende ($%d - $%d)"):format(fine.price.min, fine.price.max),
+                                             10)
+                            if fineAmount == nil or tonumber(fineAmount) < fine.price.min or tonumber(fineAmount) >
+                                fine.price.max then
                                 exports["soz-hud"]:DrawNotification("Montant de l'amende invalide", "error")
                                 return
                             end
@@ -298,8 +307,7 @@ PoliceJob.Functions.Menu.GenerateInvoiceMenu = function(job, targetPlayer)
                             fineAmount = fine.price
                         end
 
-                        QBCore.Functions.Progressbar("job:police:fines", "Rédaction de l'amende", 5000, false, true,
-                                                     {
+                        QBCore.Functions.Progressbar("job:police:fines", "Rédaction de l'amende", 5000, false, true, {
                             disableMovement = false,
                             disableCarMovement = true,
                             disableMouse = false,
@@ -316,7 +324,8 @@ PoliceJob.Functions.Menu.GenerateInvoiceMenu = function(job, targetPlayer)
                             rotation = {x = -120.0, y = 0.0, z = 0.0},
                         }, function() -- Done
                             if #(GetEntityCoords(ped) - GetEntityCoords(GetPlayerPed(player))) < 2.5 then
-                                TriggerServerEvent("banking:server:sendInvoice", GetPlayerServerId(player), fine.label, fineAmount, "fine")
+                                TriggerServerEvent("soz-core:server:bank:sendInvoice", GetPlayerServerId(player),
+                                                   fine.label, fineAmount, "fine")
                             else
                                 exports["soz-hud"]:DrawNotification("Personne n'est à portée de vous", "error")
                             end
@@ -350,8 +359,8 @@ PoliceJob.Functions.Menu.GenerateLicenseMenu = function(job, targetPlayer)
                     values = sliderPoints,
                     select = function(item)
                         local ped = PlayerPedId()
-                        QBCore.Functions.Progressbar("job:police:license", "Retrait de points en cours...", 5000, false, true,
-                                                     {
+                        QBCore.Functions.Progressbar("job:police:license", "Retrait de points en cours...", 5000, false,
+                                                     true, {
                             disableMovement = false,
                             disableCarMovement = true,
                             disableMouse = false,
@@ -368,7 +377,8 @@ PoliceJob.Functions.Menu.GenerateLicenseMenu = function(job, targetPlayer)
                             rotation = {x = -120.0, y = 0.0, z = 0.0},
                         }, function() -- Done
                             if #(GetEntityCoords(ped) - GetEntityCoords(GetPlayerPed(player))) < 2.5 then
-                                TriggerServerEvent("police:server:RemovePoint", GetPlayerServerId(player), license, item.Value)
+                                TriggerServerEvent("police:server:RemovePoint", GetPlayerServerId(player), license,
+                                                   item.Value)
                             else
                                 exports["soz-hud"]:DrawNotification("Personne n'est à portée de vous", "error")
                             end
@@ -391,8 +401,8 @@ PoliceJob.Functions.Menu.GenerateLicenseMenu = function(job, targetPlayer)
                     value = license,
                     confirm = function(item)
                         local ped = PlayerPedId()
-                        QBCore.Functions.Progressbar("job:police:license", "Retrait de points en cours...", 5000, false, true,
-                                                     {
+                        QBCore.Functions.Progressbar("job:police:license", "Retrait de points en cours...", 5000, false,
+                                                     true, {
                             disableMovement = false,
                             disableCarMovement = true,
                             disableMouse = false,
@@ -409,7 +419,8 @@ PoliceJob.Functions.Menu.GenerateLicenseMenu = function(job, targetPlayer)
                             rotation = {x = -120.0, y = 0.0, z = 0.0},
                         }, function() -- Done
                             if #(GetEntityCoords(ped) - GetEntityCoords(GetPlayerPed(player))) < 2.5 then
-                                TriggerServerEvent("police:server:RemoveLicense", GetPlayerServerId(player), license, item.Value)
+                                TriggerServerEvent("police:server:RemoveLicense", GetPlayerServerId(player), license,
+                                                   item.Value)
                             else
                                 exports["soz-hud"]:DrawNotification("Personne n'est à portée de vous", "error")
                             end
@@ -443,8 +454,8 @@ PoliceJob.Functions.Menu.GenerateLicenseMenu = function(job, targetPlayer)
                     value = nil,
                     select = function()
                         local ped = PlayerPedId()
-                        QBCore.Functions.Progressbar("job:police:license", "Enregistrement du permis en cours...", 5000, false, true,
-                                                     {
+                        QBCore.Functions.Progressbar("job:police:license", "Enregistrement du permis en cours...", 5000,
+                                                     false, true, {
                             disableMovement = false,
                             disableCarMovement = true,
                             disableMouse = false,
