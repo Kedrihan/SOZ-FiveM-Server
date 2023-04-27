@@ -19,6 +19,7 @@ import { PlayerMoneyService } from '../player/player.money.service';
 import { PlayerService } from '../player/player.service';
 import { BankAccountService } from './bank.account.service';
 import { Exportable } from '@public/core/decorators/exports';
+import { isOk } from '@public/shared/result';
 
 @Provider()
 export class BankInvoiceProvider {
@@ -227,12 +228,12 @@ export class BankInvoiceProvider {
                 delete this.Invoices[account][id];
                 TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.source, id);
             } else {
-                const [success, _] = this.bankAccountService.transferMoney(
+                const result = this.bankAccountService.transferMoney(
                     invoice.targetAccount,
                     invoice.emitterSafe,
                     invoice.amount
                 );
-                if (success) {
+                if (isOk(result)) {
                     this.prismaService.invoices.update({
                         where: {
                             id: invoice.id,

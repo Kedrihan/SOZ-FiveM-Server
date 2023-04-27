@@ -15,6 +15,7 @@ import { PlayerMoneyService } from '../player/player.money.service';
 import { PlayerService } from '../player/player.service';
 import { BankAccountService } from './bank.account.service';
 import { Exportable } from '@public/core/decorators/exports';
+import { Err, Ok, Result } from '@public/shared/result';
 
 @Provider()
 export class BankProvider {
@@ -66,12 +67,12 @@ export class BankProvider {
     }
 
     @Rpc(RpcServerEvent.BANK_CREATE_OFFSHORE_ACCOUNT)
-    public async createOffshoreAccount(source: number, account: string): Promise<[boolean, string]> {
+    public async createOffshoreAccount(source: number, account: string): Promise<Result<boolean, string>> {
         const player = this.playerService.getPlayer(source);
         const offshore = this.bankAccountService.getAccount('offshore_' + account);
         if (this.jobPermissionService.hasPermission(player.job.id, JobPermission.SocietyBankAccount)) {
             if (offshore) {
-                return [false, 'already_exist'];
+                return Err('already_exist')
             }
             this.bankAccountService.createAccount(
                 'offshore_' + account,
@@ -79,9 +80,9 @@ export class BankProvider {
                 'offshore',
                 'offshore_' + account,
             );
-            return [true, ''];
+            return Ok(true);
         } else {
-            return [false, 'action_forbidden'];
+            return Err('action_forbidden');
         }
     }
 
@@ -90,22 +91,22 @@ export class BankProvider {
         source: number,
         accountTarget: string,
         amount: number,
-    ): Promise<[boolean, string]> {
+    ): Promise<Result<boolean, string>> {
         const player = this.playerService.getPlayer(source);
         const currentMoney = player.money.marked_money;
         if (this.jobPermissionService.hasPermission(player.job.id, JobPermission.SocietyBankAccount)) {
             if (amount <= currentMoney) {
                 if (this.playerMoneyService.remove(player.source, amount, 'marked_money')) {
                     this.bankAccountService.addMoney('offshore_' + accountTarget, amount, 'marked_money');
-                    return [true, ''];
+                    return Ok(true);
                 } else {
-                    return [false, 'offshore_full'];
+                    return Err('offshore_full');
                 }
             }
         } else {
-            return [false, 'action_forbidden'];
+            return Err('action_forbidden');
         }
-        return [false, 'unknown'];
+        return Err('unknown');
     }
 
     @Rpc(RpcServerEvent.BANK_TRANSFER_MONEY)
@@ -114,7 +115,7 @@ export class BankProvider {
         accountSource: string,
         accountTarget: string,
         amount: number,
-    ): Promise<[boolean, string]> {
+    ): Promise<Result<boolean, string>> {
         const player = this.playerService.getPlayer(source);
         const currentMoney = player.money.money;
 
@@ -122,7 +123,7 @@ export class BankProvider {
             if (amount <= currentMoney) {
                 if (this.playerMoneyService.remove(player.source, amount, 'money')) {
                     this.bankAccountService.addMoney(accountTarget, amount);
-                    return [true, ''];
+                    return Ok(true);
                 }
             }
         } else if (accountTarget === 'player') {
@@ -130,30 +131,30 @@ export class BankProvider {
             if (amount <= accountMoney) {
                 if (this.playerMoneyService.add(player.source, amount, 'money')) {
                     this.bankAccountService.removeMoney(accountSource, amount);
-                    return [true, ''];
+                    return Ok(true);
                 }
             }
         } else {
             return this.bankAccountService.transferMoney(accountSource, accountTarget, amount);
         }
-        return [false, 'unknown'];
+        return Err('unknown');
     }
 
     @Rpc(RpcServerEvent.BANK_TRANSFER_CASH_MONEY)
-    public async transferCashMoney(source: number, target: number, amount: number): Promise<[boolean, string]> {
-        const player = this.playerService.getPlayer(source);
+    public async transferCashMoney(source: number, target: number, amount: number): Promise<Result<boolean, string>> {
+        const targetPlayer = this.playerService.getPlayer(target);
 
         const currentMoney = this.bankAccountService.getAccount(source).money;
         if (amount <= currentMoney) {
-            if (this.playerMoneyService.remove(player.source, amount, 'money')) {
+            if (this.playerMoneyService.remove(targetPlayer.source, amount, 'money')) {
                 this.bankAccountService.removeMoney(source, amount);
-                return [true, ''];
+                return Ok(true);
             } else {
-                return [false, 'could_not_add_money'];
+                return Err('could_not_add_money')
             }
         } else {
             this.notifier.notify(source, "Vous n'avez pas assez d'argent", 'error');
-            return [false, 'insufficient_funds'];
+            return Err('insufficient_funds')
         }
     }
 

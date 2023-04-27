@@ -5,11 +5,10 @@ import { Provider } from '../../core/decorators/provider';
 import { ClientEvent } from '../../shared/event';
 import { JobType } from '../../shared/job';
 import { PlayerLicenceType } from '../../shared/player';
-import { BankService } from '../bank/bank.service';
+import { BankAccountService } from '../bank/bank.account.service';
 import { Notifier } from '../notifier';
 import { PlayerService } from '../player/player.service';
 import { VehicleRepository } from '../repository/vehicle.repository';
-import { ServerStateService } from '../server.state.service';
 import { VehicleStateService } from './vehicle.state.service';
 
 const RadarMessage = {
@@ -23,11 +22,8 @@ export class VehicleRadarProvider {
     @Inject(VehicleRepository)
     private vehicleRepository: VehicleRepository;
 
-    @Inject(ServerStateService)
-    private serverStateService: ServerStateService;
-
-    @Inject(BankService)
-    private bankService: BankService;
+    @Inject(BankAccountService)
+    private bankAccountService: BankAccountService;
 
     @Inject(Notifier)
     private notifier: Notifier;
@@ -134,7 +130,7 @@ export class VehicleRadarProvider {
                 }
             );
 
-            this.bankService.transferBankMoney(player.charinfo.account, radar.station, fine);
+            this.bankAccountService.transferMoney(player.charinfo.account, radar.station, fine);
 
             this.notifier.advancedNotify(
                 source,

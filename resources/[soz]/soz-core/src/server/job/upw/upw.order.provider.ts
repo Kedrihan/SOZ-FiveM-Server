@@ -1,7 +1,6 @@
 import { Vehicle } from '@prisma/client';
 import { UpwConfig, UpwOrder } from '@public/shared/job/upw';
 
-import { BankService } from '../../../client/bank/bank.service';
 import { Inject } from '../../../core/decorators/injectable';
 import { Provider } from '../../../core/decorators/provider';
 import { Rpc } from '../../../core/decorators/rpc';
@@ -12,21 +11,19 @@ import { RpcServerEvent } from '../../../shared/rpc';
 import { getDefaultVehicleCondition } from '../../../shared/vehicle/vehicle';
 import { PrismaService } from '../../database/prisma.service';
 import { Notifier } from '../../notifier';
-import { PlayerService } from '../../player/player.service';
+import { BankAccountService } from '@public/server/bank/bank.account.service';
+import { isErr } from '@public/shared/result';
 
 @Provider()
 export class UpwOrderProvider {
     @Inject(PrismaService)
     private prismaService: PrismaService;
 
-    @Inject(PlayerService)
-    private playerService: PlayerService;
-
     @Inject(Notifier)
     private notifier: Notifier;
 
-    @Inject(BankService)
-    private bankService: BankService;
+    @Inject(BankAccountService)
+    private bankAccountService: BankAccountService;
 
     private ordersInProgress: Map<string, UpwOrder> = new Map();
 
@@ -85,9 +82,9 @@ export class UpwOrderProvider {
             return;
         }
         const vehiclePrice = Math.ceil(vehicle.price * 0.01);
-        const [transferred] = await this.bankService.transferBankMoney('upw', 'farm_upw', vehiclePrice);
+        const transferred = this.bankAccountService.transferMoney('upw', 'farm_upw', vehiclePrice);
 
-        if (!transferred) {
+        if (isErr(transferred)) {
             this.notifier.notify(
                 source,
                 `Il faut ~r~${vehiclePrice.toLocaleString()}$~s~ sur le compte de l'entreprise.`

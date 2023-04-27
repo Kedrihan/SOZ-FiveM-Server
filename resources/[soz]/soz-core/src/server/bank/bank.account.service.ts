@@ -9,6 +9,7 @@ import { HouseSafeAccount } from './accounts/bank.account.house';
 import { OffshoreAccount } from './accounts/bank.account.offshore';
 import { PlayerAccount } from './accounts/bank.account.player';
 import { SafeStorageAccount } from './accounts/bank.account.safe';
+import { Err, Ok, Result } from '@public/shared/result';
 
 @Injectable()
 export class BankAccountService {
@@ -100,19 +101,19 @@ export class BankAccountService {
         return true;
     }
 
-    public removeMoney(acc: any, money: number, money_type = 'money'): [boolean, string] {
+    public removeMoney(acc: any, money: number, money_type = 'money'): Result<boolean, string> {
         const account = this.getAccount(acc);
 
         if (account[money_type] - money >= 0) {
             account[money_type] = Math.ceil(account[money_type] - money - 0.5);
             account.changed = true;
-            return [true, ''];
+            return Ok(true);
         } else {
-            return [false, 'no_account_money'];
+            return Err('no_account_money');
         }
     }
 
-    public transferMoney(accSource: any, accTarget: any, money: number): [boolean, string] {
+    public transferMoney(accSource: any, accTarget: any, money: number): Result<boolean, string> {
         const sourceAccount = this.getAccount(accSource);
         const targetAccount = this.getAccount(accTarget);
         const roundMoney = Math.round(money);
@@ -129,8 +130,7 @@ export class BankAccountService {
                     ) {
                         success = false;
                         reason = 'transfer_failed';
-
-                        return [success, reason];
+                        return Err(reason);
                     }
 
                     if (this.removeMoney(accSource, roundMoney) && this.addMoney(accTarget, roundMoney)) {
@@ -148,6 +148,7 @@ export class BankAccountService {
                         );
 
                         success = true;
+                        return Ok(success);
                     } else {
                         success = false;
                         reason = 'transfer_failed';
@@ -165,7 +166,7 @@ export class BankAccountService {
             reason = 'invalid_account';
         }
 
-        return [success, reason];
+        return Err(reason);
     }
 
     public accessGranted(acc: any, playerId: number): boolean {

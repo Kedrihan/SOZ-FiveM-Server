@@ -1,9 +1,9 @@
+import { BankAccountService } from '@public/server/bank/bank.account.service';
 import { OnEvent } from '../../../core/decorators/event';
 import { Inject } from '../../../core/decorators/injectable';
 import { Provider } from '../../../core/decorators/provider';
 import { ClientEvent, ServerEvent } from '../../../shared/event';
 import { isOk } from '../../../shared/result';
-import { BankService } from '../../bank/bank.service';
 import { InventoryManager } from '../../inventory/inventory.manager';
 import { Notifier } from '../../notifier';
 
@@ -29,8 +29,8 @@ export class FoodMealsProvider {
     @Inject(InventoryManager)
     private inventoryManager: InventoryManager;
 
-    @Inject(BankService)
-    private bankService: BankService;
+    @Inject(BankAccountService)
+    private bankAccountService: BankAccountService;
 
     @OnEvent(ServerEvent.FOOD_RETRIEVE_STATE)
     onRetrieveState(source: number) {
@@ -47,7 +47,7 @@ export class FoodMealsProvider {
             this.notifier.notify(source, 'Une commande est déjà en cours.');
             return;
         }
-        const transferred = await this.bankService.transferBankMoney('food', 'farm_food', this.ORDER_PRICE);
+        const transferred = this.bankAccountService.transferMoney('food', 'farm_food', this.ORDER_PRICE);
         if (isOk(transferred)) {
             const date = new Date();
             date.setTime(date.getTime() + 60 * 60 * 1000); // One hour later...
@@ -80,8 +80,7 @@ export class FoodMealsProvider {
             );
             this.notifier.notify(
                 source,
-                `Votre commande n'est pas encore prête ! Revenez dans ~r~${minutesLeft} minute${
-                    minutesLeft > 1 ? 's' : ''
+                `Votre commande n'est pas encore prête ! Revenez dans ~r~${minutesLeft} minute${minutesLeft > 1 ? 's' : ''
                 }~s~.`
             );
             return;

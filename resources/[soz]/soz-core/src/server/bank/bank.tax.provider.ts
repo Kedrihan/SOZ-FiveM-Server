@@ -5,6 +5,7 @@ import { Monitor } from '@public/shared/monitor';
 import { Inject } from '../../core/decorators/injectable';
 import { Provider } from '../../core/decorators/provider';
 import { BankAccountService } from './bank.account.service';
+import { isOk } from '@public/shared/result';
 
 @Provider()
 export class BankTaxProvider {
@@ -49,8 +50,8 @@ export class BankTaxProvider {
         this.monitor.log('INFO', `Society ${society} paid ${tax}$ tax. Percentage: ${percentage}%`);
         for (const [account, repartition] of Object.entries(SocietyTaxes.taxRepartition)) {
             const money = Math.ceil((tax * repartition) / 100);
-            const [success, reason] = this.bankAccountService.transferMoney(society, account, money);
-            if (success) {
+            const result = this.bankAccountService.transferMoney(society, account, money);
+            if (isOk(result)) {
                 this.monitor.log(
                     'INFO',
                     `Public society ${account} receive ${money}$ tax. Percentage: ${repartition}%`
@@ -58,7 +59,7 @@ export class BankTaxProvider {
             } else {
                 this.monitor.log(
                     'ERROR',
-                    `Public society ${account} can't receive ${money}$ tax. Percentage: ${repartition}% | Reason: ${reason}`
+                    `Public society ${account} can't receive ${money}$ tax. Percentage: ${repartition}% | Reason: ${result.err}`
                 );
             }
         }

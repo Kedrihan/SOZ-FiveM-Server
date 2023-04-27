@@ -7,6 +7,7 @@ import { JobService } from '../job.service';
 import { Notifier } from '../notifier';
 import { QBCore } from '../qbcore';
 import { BankAccountService } from './bank.account.service';
+import { isOk } from '@public/shared/result';
 
 @Provider()
 export class BankPaycheckProvider {
@@ -38,12 +39,12 @@ export class BankPaycheckProvider {
                 if (!player.PlayerData.job.onduty) {
                     payment = Math.ceil((payment * 30) / 100);
                 }
-                const [success, reason] = this.bankAccountService.transferMoney(
+                const result = this.bankAccountService.transferMoney(
                     player.PlayerData.job.id,
                     player.PlayerData.charinfo.account,
                     payment
                 );
-                if (success) {
+                if (isOk(result)) {
                     this.notifier.advancedNotify(
                         playerSource,
                         'Maze Banque',
@@ -62,7 +63,7 @@ export class BankPaycheckProvider {
                         }
                     );
                 } else {
-                    console.log(reason);
+                    console.log(result.err);
                 }
             }
         }

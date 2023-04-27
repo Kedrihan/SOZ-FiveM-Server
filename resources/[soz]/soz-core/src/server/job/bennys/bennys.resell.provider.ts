@@ -69,6 +69,7 @@ export class BennysResellProvider {
         const sellPrice = result.ok / 2;
 
         const cashTransferResult = await this.bankService.transferCashMoney('bennys_reseller', source, sellPrice);
+
         if (isOk(cashTransferResult)) {
             this.notifier.notify(source, `Vous avez vendu ce véhicule pour ~g~$${sellPrice.toLocaleString()}~s~.`);
             DeleteEntity(entity);

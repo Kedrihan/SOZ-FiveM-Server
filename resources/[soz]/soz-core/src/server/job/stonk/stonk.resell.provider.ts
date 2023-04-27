@@ -1,3 +1,4 @@
+import { BankAccountService } from '@public/server/bank/bank.account.service';
 import { OnEvent } from '../../../core/decorators/event';
 import { Inject } from '../../../core/decorators/injectable';
 import { Provider } from '../../../core/decorators/provider';
@@ -6,13 +7,13 @@ import { JobPermission, JobType } from '../../../shared/job';
 import { StonkBagType, StonkConfig } from '../../../shared/job/stonk';
 import { Monitor } from '../../../shared/monitor';
 import { toVector3Object, Vector3 } from '../../../shared/polyzone/vector';
-import { BankService } from '../../bank/bank.service';
 import { InventoryManager } from '../../inventory/inventory.manager';
 import { ItemService } from '../../item/item.service';
 import { Notifier } from '../../notifier';
 import { PlayerService } from '../../player/player.service';
 import { ProgressService } from '../../player/progress.service';
 import { QBCore } from '../../qbcore';
+import { isErr } from '@public/shared/result';
 
 @Provider()
 export class StonkResellProvider {
@@ -31,8 +32,8 @@ export class StonkResellProvider {
     @Inject(ProgressService)
     private progressService: ProgressService;
 
-    @Inject(BankService)
-    private bankService: BankService;
+    @Inject(BankAccountService)
+    private bankAccountService: BankAccountService;
 
     @Inject(Notifier)
     private notifier: Notifier;
@@ -76,12 +77,12 @@ export class StonkResellProvider {
                     }
                 );
 
-                const transfer = await this.bankService.transferBankMoney(
+                const transfer = this.bankAccountService.transferMoney(
                     StonkConfig.bankAccount.farm,
                     StonkConfig.bankAccount.safe,
                     StonkConfig.collection[item].society_gain * resellAmount
                 );
-                if (!transfer) {
+                if (isErr(transfer)) {
                     this.monitor.log('ERROR', 'Failed to transfer money to safe', {
                         account_source: StonkConfig.bankAccount.farm,
                         account_destination: StonkConfig.bankAccount.safe,

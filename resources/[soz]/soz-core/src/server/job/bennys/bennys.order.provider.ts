@@ -1,3 +1,4 @@
+import { BankAccountService } from '@public/server/bank/bank.account.service';
 import { Exportable } from '../../../core/decorators/exports';
 import { Inject } from '../../../core/decorators/injectable';
 import { Provider } from '../../../core/decorators/provider';
@@ -8,24 +9,19 @@ import { BennysConfig, BennysOrder } from '../../../shared/job/bennys';
 import { isErr } from '../../../shared/result';
 import { RpcServerEvent } from '../../../shared/rpc';
 import { getDefaultVehicleCondition } from '../../../shared/vehicle/vehicle';
-import { BankService } from '../../bank/bank.service';
 import { PrismaService } from '../../database/prisma.service';
 import { Notifier } from '../../notifier';
-import { PlayerService } from '../../player/player.service';
 
 @Provider()
 export class BennysOrderProvider {
     @Inject(PrismaService)
     private prismaService: PrismaService;
 
-    @Inject(PlayerService)
-    private playerService: PlayerService;
+    @Inject(BankAccountService)
+    private bankAccountService: BankAccountService;
 
     @Inject(Notifier)
     private notifier: Notifier;
-
-    @Inject(BankService)
-    private bankService: BankService;
 
     private ordersInProgress: Map<string, BennysOrder> = new Map();
 
@@ -74,7 +70,7 @@ export class BennysOrderProvider {
             return;
         }
         const vehiclePrice = Math.ceil(vehicle.price * 0.01);
-        const transferred = await this.bankService.transferBankMoney('bennys', 'farm_bennys', vehiclePrice);
+        const transferred = this.bankAccountService.transferMoney('bennys', 'farm_bennys', vehiclePrice);
 
         if (isErr(transferred)) {
             this.notifier.notify(

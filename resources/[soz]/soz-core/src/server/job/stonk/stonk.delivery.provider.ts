@@ -1,3 +1,4 @@
+import { BankAccountService } from '@public/server/bank/bank.account.service';
 import { Once, OnceStep, OnEvent } from '../../../core/decorators/event';
 import { Inject } from '../../../core/decorators/injectable';
 import { Provider } from '../../../core/decorators/provider';
@@ -6,7 +7,6 @@ import { JobPermission, JobType } from '../../../shared/job';
 import { StonkConfig } from '../../../shared/job/stonk';
 import { Monitor } from '../../../shared/monitor';
 import { NamedZone } from '../../../shared/polyzone/box.zone';
-import { BankService } from '../../bank/bank.service';
 import { FieldProvider } from '../../farm/field.provider';
 import { InventoryManager } from '../../inventory/inventory.manager';
 import { ItemService } from '../../item/item.service';
@@ -14,6 +14,7 @@ import { Notifier } from '../../notifier';
 import { PlayerService } from '../../player/player.service';
 import { ProgressService } from '../../player/progress.service';
 import { QBCore } from '../../qbcore';
+import { isErr } from '@public/shared/result';
 
 @Provider()
 export class StonkDeliveryProvider {
@@ -32,8 +33,8 @@ export class StonkDeliveryProvider {
     @Inject(ProgressService)
     private progressService: ProgressService;
 
-    @Inject(BankService)
-    private bankService: BankService;
+    @Inject(BankAccountService)
+    private bankAccountService: BankAccountService;
 
     @Inject(FieldProvider)
     private fieldService: FieldProvider;
@@ -168,12 +169,12 @@ export class StonkDeliveryProvider {
         if (this.inventoryManager.removeItemFromInventory(source, StonkConfig.delivery.item, 1)) {
             this.notifier.notify(source, `Vous avez ~g~déposé~s~ une caisse.`);
 
-            const transfer = await this.bankService.transferBankMoney(
+            const transfer = this.bankAccountService.transferMoney(
                 StonkConfig.bankAccount.farm,
                 StonkConfig.bankAccount.safe,
                 StonkConfig.delivery.society_gain
             );
-            if (!transfer) {
+            if (isErr(transfer)) {
                 this.monitor.log('ERROR', 'Failed to transfer money to safe', {
                     account_source: StonkConfig.bankAccount.farm,
                     account_destination: StonkConfig.bankAccount.safe,
