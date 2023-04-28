@@ -71,4 +71,5 @@ export type BankingInformation = {
     bankbalance: string;
     money: string;
     offshore: string;
-}
+};
+export type CurrentBank = { bank: string; type: string };

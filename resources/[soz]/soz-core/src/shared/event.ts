@@ -223,16 +223,15 @@ export enum ServerEvent {
     CRIMI_UNHOOD = 'soz-core:server:crimi:unhood',
     CRIMI_SMOKE_STRESS = 'soz-core:server:crimi:smoke-stress',
 
-    BANK_REMOVE_LIQUIDITY = 'soz-core:server:bank:removeLiquidity',
-    BANK_SEND_INVOICE = 'soz-core:server:bank:sendInvoice',
-    BANK_SEND_SOCIETY_INVOICE = 'soz-core:server:bank:sendSocietyInvoice',
-    BANK_REFUSE_INVOICE = 'soz-core:server:bank:refuseInvoice',
-    BANK_ACCEPT_INVOICE = 'soz-core:server:bank:acceptInvoice',
-    BANK_SAFE_DEPOSIT = 'soz-core:server:bank:safeStorageDeposit',
-    BANK_SAFE_WITHDRAW = 'soz-core:server:bank:safeStorageWithdraw',
-    BANK_TRANSFER_MONEY = 'soz-core:server:bank:transferMoney',
-    ATM_REMOVE_LIQUIDITY = 'soz-core:server:bank:removeAtmLiquidity',
-
+    BANK_REMOVE_LIQUIDITY = 'soz-core:server:bank:remove-liquidity',
+    BANK_SEND_INVOICE = 'soz-core:server:bank:send-invoice',
+    BANK_SEND_SOCIETY_INVOICE = 'soz-core:server:bank:send-society-invoice',
+    BANK_REFUSE_INVOICE = 'soz-core:server:bank:refuse-invoice',
+    BANK_ACCEPT_INVOICE = 'soz-core:server:bank:accept-invoice',
+    BANK_SAFE_DEPOSIT = 'soz-core:server:bank:safe-storage-deposit',
+    BANK_SAFE_WITHDRAW = 'soz-core:server:bank:safe-storage-withdraw',
+    BANK_TRANSFER_MONEY = 'soz-core:server:bank:transfer-money',
+    ATM_REMOVE_LIQUIDITY = 'soz-core:server:bank:remove-atm-liquidity',
 }
 
 export enum ClientEvent {
@@ -395,11 +394,14 @@ export enum ClientEvent {
     BANK_ENTER_LOCATION = 'locations:zone:enter',
     BANK_EXIT_LOCATION = 'locations:zone:exit',
 
-    ATM_DISPLAY_BLIPS = 'soz-core:client:bank:displayAtmBlips',
-    BANK_INVOICE_REJECTED = 'soz-core:client:bank:invoiceRejected',
-    BANK_INVOICE_RECEIVED = 'soz-core:client:bank:invoiceReceived',
-    BANK_INVOICE_PAID = 'soz-core:client:bank:invoicePaid',
-    BANK_OPEN_HOUSE_SAFE_STORAGE = 'soz-core:client:bank:openHouseSafeStorage',
+    ATM_DISPLAY_BLIPS = 'soz-core:client:bank:display-atm-blips',
+    BANK_INVOICE_REJECTED = 'soz-core:client:bank:invoice-rejected',
+    BANK_INVOICE_RECEIVED = 'soz-core:client:bank:invoice-received',
+    BANK_INVOICE_PAID = 'soz-core:client:bank:invoice-paid',
+    BANK_OPEN_HOUSE_SAFE_STORAGE = 'soz-core:client:bank:open-house-safe-storage',
+    BANK_OPEN_SCREEN = 'soz-core:client:bank:open-screen',
+    BANK_OPEN_ATM_SCREEN = 'soz-core:client:bank:open-atm-screen',
+    BANK_OPEN_SOCIETY_SCREEN = 'soz-core:client:bank:open-society-screen',
 }
 
 export enum GameEvent {
@@ -586,9 +588,13 @@ export enum NuiEvent {
     TaxiDisplayHorodateur = 'soz-core:client:taxi:display-horodateur',
 
     BankDeposit = 'soz-core:client:bank:deposit',
+    BankOffshoreDeposit = 'soz-core:client:bank:offshore-deposit',
+    BankTransfer = 'soz-core:client:bank:transfer',
     BankWithdraw = 'soz-core:client:bank:withdraw',
+    BankClosed = 'soz-core:client:bank:closed',
+    CreateOffshoreAccount = 'soz-core:client:bank:create-offshore-account',
 
-    SafeDeposit = 'soz-core:client:bank:safeDeposit',
-    SafeDepositAll = 'soz-core:client:bank:safeDepositAll',
-    SafeWithdraw = 'soz-core:client:bank:safeWithdraw',
+    SafeDeposit = 'soz-core:client:bank:safe-deposit',
+    SafeDepositAll = 'soz-core:client:bank:safe-deposit-all',
+    SafeWithdraw = 'soz-core:client:bank:safe-withdraw',
 }

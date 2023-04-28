@@ -183,7 +183,7 @@ QBCore.Functions.CreateCallback("soz-upw:server:Harvest", function(source, cb, i
 
         if invChanged and facility.scope == "default" then
             -- Add payment from San Andreas State on default terminals only
-            TriggerEvent("soz-core:server:bank:transferMoney", Config.Upw.Accounts.FarmAccount,
+            TriggerEvent("soz-core:server:bank:transfer-money", Config.Upw.Accounts.FarmAccount,
                          Config.Upw.Accounts.SafeAccount,
                          Config.Upw.Resale.EnergyCellPriceGlobal[firstItem.item.name] or 0)
         end

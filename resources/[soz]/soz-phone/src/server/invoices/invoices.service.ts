@@ -17,9 +17,7 @@ class _InvoicesService {
 
     async handlePayInvoice(reqObj: PromiseRequest<number>, resp: PromiseEventResp<void>) {
         try {
-            exports['soz-bank'].PayInvoice(reqObj.source, reqObj.data);
-            await emitNet('soz-core:server:bank:getAllPlayerInvoices', reqObj.source);
-
+            emitNet('soz-core:server:bank:accept-invoice', reqObj.source, reqObj.data);
             resp({ status: 'ok' });
         } catch (e) {
             invoicesLogger.error(`Error in handlePayInvoice, ${e.toString()}`);
@@ -29,7 +27,7 @@ class _InvoicesService {
 
     async handleRefuseInvoice(reqObj: PromiseRequest<number>, resp: PromiseEventResp<void>) {
         try {
-            emitNet('soz-core:server:bank:rejectInvoice', reqObj.source, reqObj.data);
+            emitNet('soz-core:server:bank:reject-invoice', reqObj.source, reqObj.data);
             resp({ status: 'ok' });
         } catch (e) {
             invoicesLogger.error(`Error in handleRefuseInvoice, ${e.toString()}`);

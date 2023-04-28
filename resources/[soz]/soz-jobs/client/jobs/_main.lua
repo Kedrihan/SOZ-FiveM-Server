@@ -34,7 +34,7 @@ RegisterNetEvent("jobs:client:InvoicePlayer", function(data)
         return
     end
 
-    TriggerServerEvent("soz-core:server:bank:sendInvoice", GetPlayerServerId(player), title, tonumber(amount))
+    TriggerServerEvent("soz-core:server:bank:send-invoice", GetPlayerServerId(player), title, tonumber(amount))
 end)
 
 RegisterNetEvent("jobs:client:InvoiceSociety", function(data)
@@ -45,5 +45,5 @@ RegisterNetEvent("jobs:client:InvoiceSociety", function(data)
         return
     end
 
-    TriggerServerEvent("soz-core:server:bank:sendSocietyInvoice", GetPlayerServerId(player), title, tonumber(amount))
+    TriggerServerEvent("soz-core:server:bank:send-society-invoice", GetPlayerServerId(player), title, tonumber(amount))
 end)

@@ -72,7 +72,7 @@ export class BankProvider {
         const offshore = this.bankAccountService.getAccount('offshore_' + account);
         if (this.jobPermissionService.hasPermission(player.job.id, JobPermission.SocietyBankAccount)) {
             if (offshore) {
-                return Err('already_exist')
+                return Err('already_exist');
             }
             this.bankAccountService.createAccount(
                 'offshore_' + account,
@@ -150,11 +150,11 @@ export class BankProvider {
                 this.bankAccountService.removeMoney(source, amount);
                 return Ok(true);
             } else {
-                return Err('could_not_add_money')
+                return Err('could_not_add_money');
             }
         } else {
             this.notifier.notify(source, "Vous n'avez pas assez d'argent", 'error');
-            return Err('insufficient_funds')
+            return Err('insufficient_funds');
         }
     }
 

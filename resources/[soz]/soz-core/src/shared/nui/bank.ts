@@ -13,7 +13,6 @@ export type BankData = {
     bankAtmAccount: number;
     offshore: any;
 };
-
 type BankingInformation = {
     playerName: string;
     accountInfo: string;

@@ -226,7 +226,7 @@ RegisterServerEvent("inventory:server:ResellItem", function(item, amount, resell
         price = itemSpec.resellPrice[item.metadata.tier] or 1
     end
 
-    TriggerEvent("soz-core:server:bank:transferMoney", resellZone.SourceAccount, resellZone.TargetAccount,
+    TriggerEvent("soz-core:server:bank:transfer-money", resellZone.SourceAccount, resellZone.TargetAccount,
                  math.ceil(price) * amount)
     TriggerClientEvent("hud:client:DrawNotification", Player.PlayerData.source,
                        string.format("Vous avez vendu ~o~%s ~b~%s", amount, itemSpec.label))

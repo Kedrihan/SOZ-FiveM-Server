@@ -96,19 +96,19 @@ export enum RpcServerEvent {
 
     LSMC_GET_CURRENT_ORGAN = 'soz-core:server:lsmc:get-organ',
 
-    BANK_GET_MONEY = 'soz-core:server:bank:getBankMoney',
-    BANK_GET_ACCOUNT = 'soz-core:server:bank:getBankAccount',
-    BANK_GET_TERMINAL_TYPE = 'soz-core:server:bank:getTerminalType',
-    BANK_HAS_ENOUGH_LIQUIDITY = 'soz-core:server:bank:hasEnoughLiquidity',
-    BANK_GET_BANKING_INFORMATIONS = 'soz-core:server:bank:getBankingInformation',
-    BANK_CREATE_OFFSHORE_ACCOUNT = 'soz-core:server:bank:createOffshoreAccount',
-    BANK_TRANSFER_OFFSHORE_MONEY = 'soz-core:server:bank:transferOffshoreMoney',
-    BANK_TRANSFER_MONEY = 'soz-core:server:bank:transferMoneyRpc',
-    BANK_TRANSFER_CASH_MONEY = 'soz-core:server:bank:transferCashMoney',
-    BANK_OPEN_SAFE_STORAGE = 'soz-core:server:bank:openSafeStorage',
-    BANK_OPEN_HOUSE_SAFE_STORAGE = 'soz-core:server:bank:openHouseSafeStorage',
-    ATM_GET_MONEY = 'soz-core:server:bank:getAtmMoney',
-    ATM_GET_ACCOUNT = 'soz-core:server:bank:getAtmAccount',
+    BANK_GET_MONEY = 'soz-core:server:bank:get-bank-money',
+    BANK_GET_ACCOUNT = 'soz-core:server:bank:get-bank-account',
+    BANK_GET_TERMINAL_TYPE = 'soz-core:server:bank:get-terminal-type',
+    BANK_HAS_ENOUGH_LIQUIDITY = 'soz-core:server:bank:has-enough-liquidity',
+    BANK_GET_BANKING_INFORMATIONS = 'soz-core:server:bank:get-banking-information',
+    BANK_CREATE_OFFSHORE_ACCOUNT = 'soz-core:server:bank:create-offshore-account',
+    BANK_TRANSFER_OFFSHORE_MONEY = 'soz-core:server:bank:transfer-offshore-money',
+    BANK_TRANSFER_MONEY = 'soz-core:server:bank:transfer-money-rpc',
+    BANK_TRANSFER_CASH_MONEY = 'soz-core:server:bank:transfer-cash-money',
+    BANK_OPEN_SAFE_STORAGE = 'soz-core:server:bank:open-safe-storage',
+    BANK_OPEN_HOUSE_SAFE_STORAGE = 'soz-core:server:bank:open-house-safe-storage',
+    ATM_GET_MONEY = 'soz-core:server:bank:get-atm-money',
+    ATM_GET_ACCOUNT = 'soz-core:server:bank:get-atm-account',
 }
 
 export enum RpcClientEvent {
@@ -118,4 +118,5 @@ export enum RpcClientEvent {
     DELETE_LAST_VEHICLE_SPAWN = 'soz-core:rpc:client:vehicle:delete-last-spawn',
     VEHICLE_SPAWN_FROM_SERVER = 'soz-core:rpc:client:vehicle:spawn-from-server',
     VEHICLE_DELETE = 'soz-core:rpc:client:vehicle:delete',
+    BANK_GET_CURRENT = 'soz-core:rpc:client:bank:get-current',
 }

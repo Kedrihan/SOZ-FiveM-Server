@@ -23,10 +23,10 @@ export const ErrorMessage: Record<string, string> = {
     transfert_failed: 'Le transfert a subi une erreur !',
     no_account_money: "Le compte ne possède pas assez d'argent !",
     invalid_liquidity: 'Liquidité insuffisante à ce terminal',
-    max_widthdrawal_limit: 'Vous ne pouvez pas retirer plus de ~b~$%s~s~ depuis ce terminal',
-    limit: 'Limite de retrait atteinte : max. ~b~$%i~s~ par tranche de %i minutes. ',
-    withdrawal_limit: '~b~$%i~s~ retirables.',
-    time_limit: 'Revenez dans ~b~%i minutes~s~.',
+    max_widthdrawal_limit: 'Vous ne pouvez pas retirer plus de ~b~${0}~s~ depuis ce terminal',
+    limit: 'Limite de retrait atteinte : max. ~b~${0}~s~ par tranche de {1} minutes. ',
+    withdrawal_limit: '~b~${0}~s~ retirables.',
+    time_limit: 'Revenez dans ~b~{0} minutes~s~.',
 };
 export const FarmAccountMoney: Record<string, number> = {
     bank_refill: 10000000,

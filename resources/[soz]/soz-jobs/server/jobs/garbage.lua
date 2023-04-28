@@ -21,12 +21,11 @@ Citizen.CreateThread(function()
                             local resellPrice = GarbageConfig.SellPrice[item.item.name] or
                                                     GarbageConfig.SellPrice["default"]
 
-                            TriggerEvent("soz-core:server:bank:transferMoney", "farm_garbage", "safe_garbage",
+                            TriggerEvent("soz-core:server:bank:transfer-money", "farm_garbage", "safe_garbage",
                                          itemAmount * resellPrice)
                             TriggerEvent("monitor:server:event", "job_bluebird_recycling_garbage_bag",
                                          {item = item.item.name}, {quantity = tonumber(itemAmount)})
                         end
-
                     end
                 end
             end
