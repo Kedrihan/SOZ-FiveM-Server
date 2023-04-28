@@ -200,7 +200,7 @@ export class BankProvider {
     public async onSafeDeposit(
         source: number,
         money_type: 'money' | 'marked_money',
-        safeStorage: any,
+        safeStorage: string,
         amount: number,
     ): Promise<void> {
         const player = this.playerService.getPlayer(source);
@@ -225,7 +225,7 @@ export class BankProvider {
     public async onSafeWithdraw(
         source: number,
         money_type: 'money' | 'marked_money',
-        safeStorage: any,
+        safeStorage: string,
         amount: number,
     ): Promise<void> {
         const player = this.playerService.getPlayer(source);

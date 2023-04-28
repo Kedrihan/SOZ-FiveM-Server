@@ -64,6 +64,8 @@ export enum MenuType {
     TaxiJobMenu = 'taxi_job',
     PlayerPersonal = 'player_personal',
     LsmcJobMenu = 'lsmc_job_menu',
+    SafeMenu = 'safe_menu',
+    SafeHouseMenu = 'safe_house_menu',
 }
 
 export interface MenuTypeMap extends Record<MenuType, any> {

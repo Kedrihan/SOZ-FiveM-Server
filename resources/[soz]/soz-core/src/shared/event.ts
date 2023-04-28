@@ -399,6 +399,7 @@ export enum ClientEvent {
     BANK_INVOICE_REJECTED = 'soz-core:client:bank:invoiceRejected',
     BANK_INVOICE_RECEIVED = 'soz-core:client:bank:invoiceReceived',
     BANK_INVOICE_PAID = 'soz-core:client:bank:invoicePaid',
+    BANK_OPEN_HOUSE_SAFE_STORAGE = 'soz-core:client:bank:openHouseSafeStorage',
 }
 
 export enum GameEvent {
@@ -586,4 +587,8 @@ export enum NuiEvent {
 
     BankDeposit = 'soz-core:client:bank:deposit',
     BankWithdraw = 'soz-core:client:bank:withdraw',
+
+    SafeDeposit = 'soz-core:client:bank:safeDeposit',
+    SafeDepositAll = 'soz-core:client:bank:safeDepositAll',
+    SafeWithdraw = 'soz-core:client:bank:safeWithdraw',
 }

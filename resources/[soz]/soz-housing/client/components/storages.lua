@@ -28,9 +28,8 @@ Housing.Functions.Components.SetupStashInteraction = function(propertyId, apartm
                 return not apartment:IsAvailable() and Housing.Functions.IsInsideApartment()
             end,
             action = function()
-                TriggerServerEvent("inventory:server:openInventory", "house_stash", apartment:GetIdentifier(), {
-                    apartmentTier = apartment:GetTier(),
-                })
+                TriggerServerEvent("inventory:server:openInventory", "house_stash", apartment:GetIdentifier(),
+                                   {apartmentTier = apartment:GetTier()})
             end,
         },
     })
@@ -48,9 +47,8 @@ Housing.Functions.Components.SetupMoneyInteraction = function(propertyId, apartm
                 return not apartment:IsAvailable() and Housing.Functions.IsInsideApartment()
             end,
             action = function()
-                TriggerEvent("banking:client:openHouseSafe", apartment:GetIdentifier(), {
-                    apartmentTier = apartment:GetTier(),
-                })
+                TriggerEvent("soz-core:client:bank:openHouseSafeStorage", apartment:GetIdentifier(),
+                             {apartmentTier = apartment:GetTier()})
             end,
         },
     })

@@ -10,7 +10,6 @@ exports("GetCurrentBank", function()
     return currentBank
 end)
 
-
 RegisterNetEvent("banking:client:displayAtmBlips", function(newAtmCoords)
     for atmAccount, coords in pairs(newAtmCoords) do
         CreateAtmBlip(atmAccount, coords)
@@ -60,9 +59,8 @@ local function OpenSafeStorageMenu(safeStorage, money, black_money)
         MenuV:CloseAll()
     end)
 
-    local markedMoneyMenu = MenuV:InheritMenu(safeStorageMenu, {
-        subtitle = ("Gestion de l'argent marqué (%s$)"):format(black_money),
-    })
+    local markedMoneyMenu = MenuV:InheritMenu(safeStorageMenu,
+                                              {subtitle = ("Gestion de l'argent marqué (%s$)"):format(black_money)})
     local markedMoneyDeposit = markedMoneyMenu:AddButton({label = "Déposer"})
     local markedMoneyDepositAll = markedMoneyMenu:AddButton({label = "Tout déposer"})
     local markedMoneyWithdraw = markedMoneyMenu:AddButton({label = "Retirer"})
@@ -93,9 +91,8 @@ end
 local function OpenHouseSafeStorageMenu(safeStorage, money, black_money, maxSafeWeight)
     safeHouseStorageMenu:ClearItems()
 
-    local markedMoneyMenu = MenuV:InheritMenu(safeHouseStorageMenu, {
-        subtitle = ("Gestion de l'argent marqué ($%s)"):format(black_money),
-    })
+    local markedMoneyMenu = MenuV:InheritMenu(safeHouseStorageMenu,
+                                              {subtitle = ("Gestion de l'argent marqué ($%s)"):format(black_money)})
     local markedMoneyDeposit = markedMoneyMenu:AddButton({label = "Déposer"})
     local markedMoneyDepositAll = markedMoneyMenu:AddButton({label = "Tout déposer"})
     local markedMoneyWithdraw = markedMoneyMenu:AddButton({label = "Retirer"})
@@ -122,24 +119,9 @@ local function OpenHouseSafeStorageMenu(safeStorage, money, black_money, maxSafe
     safeHouseStorageMenu:Open()
 end
 
-CreateThread(function()
-    
-end)
-
-RegisterNetEvent("banking:client:qTargetOpenSafe", function(data)
-    if data.safe.owner == nil or (PlayerData.job ~= nil and PlayerData.job.id == data.safe.owner) then
-        QBCore.Functions.TriggerCallback("banking:server:openSafeStorage", function(isAllowed, money, black_money)
-            if isAllowed then
-                OpenSafeStorageMenu(data.SafeId, money, black_money)
-            else
-                exports["soz-hud"]:DrawNotification("Vous n'avez pas accès à ce coffre", "error")
-            end
-        end, data.SafeId)
-    end
-end)
-
 RegisterNetEvent("banking:client:openHouseSafe", function(houseid)
-    QBCore.Functions.TriggerCallback("banking:server:openHouseSafeStorage", function(isAllowed, money, black_money, max)
+    QBCore.Functions.TriggerCallback("banking:server:openHouseSafeStorage",
+                                     function(isAllowed, money, black_money, max)
         if isAllowed then
             OpenHouseSafeStorageMenu(houseid, money, black_money, max)
         else

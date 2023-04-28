@@ -13,6 +13,12 @@ import { BlipFactory } from '../blip';
 import { ItemService } from '../item/item.service';
 import { JobPermissionService } from '../job/job.permission.service';
 import { PlayerService } from '../player/player.service';
+import { Notifier } from '../notifier';
+import { AtmMinimalInformation, BankAccount } from '@public/shared/bank';
+import { InputService } from '../nui/input.service';
+import { PlayerData } from '@public/shared/player';
+import { NuiMenu } from '../nui/nui.menu';
+import { MenuType } from '@public/shared/nui/menu';
 
 @Provider()
 export class BankProvider {
@@ -31,6 +37,15 @@ export class BankProvider {
 
     @Inject(TargetFactory)
     private targetFactory: TargetFactory;
+
+    @Inject(InputService)
+    private inputService: InputService;
+
+    @Inject(Notifier)
+    private notifier: Notifier;
+
+    @Inject(NuiMenu)
+    private nuiMenu: NuiMenu;
 
     @Once(OnceStep.PlayerLoaded)
     public onPlayerLoaded() {
@@ -201,18 +216,21 @@ export class BankProvider {
                             }
                             return safe.owner === null || player.job.id.toString() === safe.owner;
                         },
-                        action: () => {
-                            /**
-                             if data.safe.owner == nil or (PlayerData.job ~= nil and PlayerData.job.id == data.safe.owner) then
-                                QBCore.Functions.TriggerCallback("banking:server:openSafeStorage", function(isAllowed, money, black_money)
-                                    if isAllowed then
-                                        OpenSafeStorageMenu(data.SafeId, money, black_money)
-                                    else
-                                        exports["soz-hud"]:DrawNotification("Vous n'avez pas accès à ce coffre", "error")
-                                    end
-                                end, data.SafeId)
-                            end
-                             */
+                        action: async () => {
+
+                            const result = await emitRpc<[boolean, number, number]>(RpcServerEvent.BANK_OPEN_SAFE_STORAGE, id);
+                            const isAllowed = result[0];
+                            if (isAllowed) {
+                                const money = result[1];
+                                const marked_money = result[2];
+                                this.nuiMenu.openMenu(MenuType.SafeMenu, {
+                                    safeStorage: id,
+                                    money: money,
+                                    marked_money: marked_money,
+                                });
+                            } else {
+                                this.notifier.notify('Vous n\'avez pas accès à ce coffre', 'error')
+                            }
                         },
                     },
                 ],
@@ -236,9 +254,9 @@ export class BankProvider {
     }
 
     @OnNuiEvent(NuiEvent.BankDeposit)
-    public async onBankDeposit({ data, value }: { data: BankData; value: number }) {}
+    public async onBankDeposit({ data, value }: { data: BankData; value: number }) { }
     @OnNuiEvent(NuiEvent.BankWithdraw)
-    public async onBankWithdraw({ data, value }: { data: BankData; value: number }) {}
+    public async onBankWithdraw({ data, value }: { data: BankData; value: number }) { }
 
     private atmRefillAction(atmType: string, item: string) {
         return {
@@ -260,20 +278,64 @@ export class BankProvider {
                 }
                 return false;
             },
-            action: (entity: number) => {
+            action: async (entity: number) => {
                 const currentMoney = await emitRpc<number>(
                     RpcServerEvent.ATM_GET_MONEY,
                     atmType,
                     GetEntityCoords(entity)
                 );
-                const atm = await 
-                /*local currentMoney = QBCore.Functions.TriggerRpc("banking:server:getAtmMoney", atmType, GetEntityCoords(entity))
-                local atm = QBCore.Functions.TriggerRpc("banking:server:getAtmAccount", atmType, GetEntityCoords(entity))
-                local maxMoney = Config.BankAtmDefault[atmType].maxMoney
-
-                TriggerServerEvent("soz-core:server:job:stonk:fill-in", atm.account, item, currentMoney, maxMoney)*/
+                const atm = await emitRpc<AtmMinimalInformation>(RpcServerEvent.ATM_GET_ACCOUNT, atmType, GetEntityCoords(entity));
+                const maxMoney = BankAtmDefault[atmType].maxMoney;
+                emitNet(ServerEvent.STONK_FILL_IN, atm.account, item, currentMoney, maxMoney);
             },
             item: item,
         };
+    }
+
+    @OnNuiEvent<{ safeStorage: string, money_type: 'money' | 'marked_money' }>(NuiEvent.SafeDeposit)
+    public async onSafeDeposit({ safeStorage, money_type }: { safeStorage: string, money_type: 'money' | 'marked_money' }) {
+        const amount = await this.inputService.askInput({
+            title: 'Quantité',
+            defaultValue: '0',
+        });
+        if (amount && parseInt(amount) > 0) {
+            emitNet(ServerEvent.BANK_SAFE_DEPOSIT, money_type, safeStorage, parseInt(amount));
+        }
+    }
+
+    @OnNuiEvent<{ safeStorage: string, money_type: 'money' | 'marked_money' }>(NuiEvent.SafeDepositAll)
+    public async onSafeDepositAll({ safeStorage, money_type }: { safeStorage: string, money_type: 'money' | 'marked_money' }) {
+        const player = this.playerService.getPlayer();
+        if (player.money[money_type] && player.money[money_type] > 0) {
+            emitNet(ServerEvent.BANK_SAFE_DEPOSIT, money_type, safeStorage, player.money[money_type]);
+        }
+    }
+
+    @OnNuiEvent<{ safeStorage: string, money_type: 'money' | 'marked_money' }>(NuiEvent.SafeWithdraw)
+    public async onSafeWithdraw({ safeStorage, money_type }: { safeStorage: string, money_type: 'money' | 'marked_money' }) {
+        const amount = await this.inputService.askInput({
+            title: 'Quantité',
+            defaultValue: '0',
+        });
+        if (amount && parseInt(amount) > 0) {
+            emitNet(ServerEvent.BANK_SAFE_WITHDRAW, money_type, safeStorage, parseInt(amount));
+        }
+    }
+
+    @OnEvent(ClientEvent.BANK_OPEN_HOUSE_SAFE_STORAGE)
+    public async onOpenHouseSafeStorage(houseId: string) {
+        const result = await emitRpc<[boolean, number, number, number]>(RpcServerEvent.BANK_OPEN_HOUSE_SAFE_STORAGE, houseId);
+        const isAllowed = result[0];
+        if (isAllowed) {
+            const money = result[1];
+            const marked_money = result[2];
+            const max = result[3];
+            this.nuiMenu.openMenu(MenuType.SafeHouseMenu, {
+                safeStorage: houseId,
+                money: money,
+                marked_money: marked_money,
+                max: max,
+            });
+        }
     }
 }
