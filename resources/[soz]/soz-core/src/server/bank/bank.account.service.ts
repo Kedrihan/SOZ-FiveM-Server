@@ -126,7 +126,7 @@ export class BankAccountService {
                 if (roundMoney <= sourceAccount.money) {
                     if (
                         (targetAccount.type === 'house_safe' || targetAccount.type === 'safestorages') &&
-                        roundMoney > targetAccount.max
+                        roundMoney + targetAccount.money > targetAccount.max
                     ) {
                         success = false;
                         reason = 'transfer_failed';

@@ -67,7 +67,19 @@ export class BankInvoiceProvider {
             }
 
             this.Invoices[invoice.targetAccount] = this.Invoices[invoice.targetAccount] || {};
-            this.Invoices[invoice.targetAccount][invoice.id] = invoice;
+            this.Invoices[invoice.targetAccount][invoice.id] = {
+                id: invoice.id,
+                label: invoice.label,
+                amount: invoice.amount,
+                createdAt: invoice.created_at.getTime(),
+                payed: invoice.payed,
+                refused: invoice.refused,
+                citizenid: invoice.citizenid,
+                targetAccount: invoice.targetAccount,
+                emitter: invoice.emitter,
+                emitterName: invoice.emitterName,
+                emitterSafe: invoice.emitterSafe,
+            };
         }
     }
 
@@ -77,7 +89,7 @@ export class BankInvoiceProvider {
         targetSource: number,
         label: string,
         amount: number,
-        kind: string
+        kind: string,
     ): Promise<void> {
         const player = this.playerService.getPlayer(source);
         const target = this.playerService.getPlayer(targetSource);
@@ -101,7 +113,7 @@ export class BankInvoiceProvider {
         targetSource: number,
         label: string,
         amount: number,
-        kind: string
+        kind: string,
     ): Promise<void> {
         const player = this.playerService.getPlayer(source);
         const target = this.playerService.getPlayer(targetSource);
@@ -125,7 +137,6 @@ export class BankInvoiceProvider {
             return;
         }
         for (const [account, invoices] of Object.entries(this.Invoices)) {
-
             for (const [id, _] of Object.entries(invoices)) {
                 if (Number(id) === invoiceId) {
                     await this.payInvoice(player, account, invoiceId);
@@ -202,12 +213,12 @@ export class BankInvoiceProvider {
                         payed: true,
                     },
                 });
-                this.notifier.notify(player.source, 'Vous avez ~g~payé~s~ votre facture', 'success');
+                this.notifier.notify(player.source, 'Vous avez ~g~payé~s~ votre facture', 'success', 10000);
                 if (emitter) {
                     this.notifier.notify(
                         emitter.source,
                         `Votre facture ~b~${invoice.label}~s~ a été ~g~payée`,
-                        'success'
+                        'success',
                     );
                 }
                 this.monitor.publish(
@@ -223,7 +234,7 @@ export class BankInvoiceProvider {
                         amount: invoice.amount,
                         target_account: invoice.emitterSafe,
                         source_account: invoice.targetAccount,
-                    }
+                    },
                 );
                 delete this.Invoices[account][id];
                 TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.source, id);
@@ -231,7 +242,7 @@ export class BankInvoiceProvider {
                 const result = this.bankAccountService.transferMoney(
                     invoice.targetAccount,
                     invoice.emitterSafe,
-                    invoice.amount
+                    invoice.amount,
                 );
                 if (isOk(result)) {
                     this.prismaService.invoices.update({
@@ -242,12 +253,17 @@ export class BankInvoiceProvider {
                             payed: true,
                         },
                     });
-                    this.notifier.notify(player.source, 'Vous avez ~g~payé~s~ la facture de la société', 'success');
+                    this.notifier.notify(
+                        player.source,
+                        'Vous avez ~g~payé~s~ la facture de la société',
+                        'success',
+                        10000,
+                    );
                     if (emitter) {
                         this.notifier.notify(
                             emitter.source,
                             `Votre facture ~b~${invoice.label}~s~ a été ~g~payée`,
-                            'success'
+                            'success',
                         );
                     }
                     this.monitor.publish(
@@ -263,10 +279,17 @@ export class BankInvoiceProvider {
                             amount: invoice.amount,
                             target_account: invoice.emitterSafe,
                             source_account: invoice.targetAccount,
-                        }
+                        },
                     );
                     delete this.Invoices[account][id];
                     TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.source, id);
+                } else {
+                    this.notifier.notify(
+                        player.source,
+                        '~r~Echec~s~ du paiement la facture de la société',
+                        'error',
+                        10000,
+                    );
                 }
             }
         }
@@ -302,7 +325,7 @@ export class BankInvoiceProvider {
                     target_account: invoice.emitterSafe,
                     source_account: invoice.targetAccount,
                     title: invoice.label,
-                }
+                },
             );
         } else {
             this.notifier.notify(target.source, 'Vous avez refusé la facture de la société', 'error');
@@ -323,7 +346,7 @@ export class BankInvoiceProvider {
                     target_account: invoice.emitterSafe,
                     source_account: invoice.targetAccount,
                     title: invoice.label,
-                }
+                },
             );
         }
         this.prismaService.invoices.update({
@@ -349,11 +372,11 @@ export class BankInvoiceProvider {
         targetAccount: string,
         label: string,
         amount: number,
-        kind: string
+        kind: string,
     ): Promise<boolean> {
         const dist = getDistance(
             GetEntityCoords(GetPlayerPed(emitter.source)) as Vector4,
-            GetEntityCoords(GetPlayerPed(target.source)) as Vector4
+            GetEntityCoords(GetPlayerPed(target.source)) as Vector4,
         );
         if (dist > 5) {
             this.notifier.notify(emitter.source, "Personne n'est à portée de vous", 'error');
@@ -387,6 +410,9 @@ export class BankInvoiceProvider {
                 targetAccount: targetAccount,
                 label: label,
                 amount: amount,
+                createdAt: new Date().getTime(),
+                payed: false,
+                refused: false,
             };
             TriggerClientEvent(
                 ClientEvent.BANK_INVOICE_RECEIVED,
@@ -394,7 +420,7 @@ export class BankInvoiceProvider {
                 id,
                 label,
                 amount,
-                allJobs[emitter.job.id].label
+                allJobs[emitter.job.id].label,
             );
             let invoiceJob = '';
             if (targetAccount !== target.charinfo.account) {
@@ -414,7 +440,7 @@ export class BankInvoiceProvider {
                     id: id,
                     amount: amount,
                     target_account: targetAccount,
-                }
+                },
             );
             return true;
         }
