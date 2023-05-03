@@ -13,6 +13,8 @@ import { useOutside } from '../../hook/outside';
 type TabProps = {
     bank: BankData;
 };
+const playerAccountReg = /^[0-9]{3}Z[0-9]{4}T[0-9]{3}$/;
+
 const accountDeposit = async (data: BankData, value: number) => {
     await fetchNui(NuiEvent.BankDeposit, {
         data,
@@ -259,102 +261,111 @@ export const BankApp: FunctionComponent = () => {
     if (!bankData) {
         return null;
     }
-    
+
     return (
         <MemoryRouter>
-            <div className="w-full h-full grid h-screen place-items-center">
-                <div
-                    style={{
-                        backgroundImage: `url(/public/images/vehicle/repair_app.png)`,
-                        height: '720px',
-                        width: '1280px',
-                    }}
-                    className="font-mono font-thin tracking-tight text-lg relative bg-contain bg-no-repeat"
-                >
-                    <div
-                        style={{
-                            width: '480px',
-                            height: '470px',
-                            top: '130px',
-                            left: '133px',
-                        }}
-                        className="p-2 text-white absolute flex flex-col justify-between"
-                    >
+            <div className="container">
+                <div className="row">
+                    <div className="col-3">
+                        <div className="container-fluid d-flex flex-column justify-content-around">
+                            <div className="row">
+                                <div className="col-12">
+                                    <img className="img-fluid py-5" src="/public/images/bank/logo.png" />
+                                </div>
+                            </div>
+                            <div className="row">
+                                <div className="col-12">
+                                    <div
+                                        className="nav flex-column nav-pills p-2 shadow-lg"
+                                        style={{ borderRadius: '5px' }}
+                                    >
+                                        <Link
+                                            style={{
+                                                color: 'white',
+                                            }}
+                                            className="nav-link m-1"
+                                            to="/"
+                                        >
+                                            <span>Accueil</span>
+                                        </Link>
+                                        <Link
+                                            style={{
+                                                color: 'white',
+                                            }}
+                                            className="nav-link m-1"
+                                            to="/withdraw"
+                                        >
+                                            <span>Retrait</span>
+                                        </Link>
+                                        <Link
+                                            style={{
+                                                color: 'white',
+                                            }}
+                                            className="nav-link m-1"
+                                            to="/deposit"
+                                        >
+                                            <span>Dépôt</span>
+                                        </Link>
+                                        <Link
+                                            style={{
+                                                color: 'white',
+                                            }}
+                                            className="nav-link m-1"
+                                            to="/transfer"
+                                        >
+                                            <span>Transfert</span>
+                                        </Link>
+                                        <Link
+                                            style={{
+                                                color: 'white',
+                                            }}
+                                            className="nav-link m-1"
+                                            to="/offshore"
+                                        >
+                                            <span>Compte OffShore</span>
+                                        </Link>
+                                        {!playerAccountReg.test(bankData.information.accountInfo) && (
+                                            <Link
+                                                style={{
+                                                    color: 'white',
+                                                }}
+                                                className="nav-link m-1"
+                                                to="/actions"
+                                            >
+                                                <span>Option du compte</span>
+                                            </Link>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="col-12 mt-2">
+                                    <div className="col-12">
+                                        {playerAccountReg.test(bankData.information.accountInfo) && (
+                                            <div
+                                                id="accountNumberCard"
+                                                className="card mb-3"
+                                                style={{ color: 'white' }}
+                                            >
+                                                <div className="card-header">Identifiant du compte</div>
+                                                <div className="card-body">
+                                                    <p className="card-text" style={{ color: 'white' }}>
+                                                        <span id="accountNumber">
+                                                            {bankData.information.accountInfo}
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-9" style={{ paddingLeft: 0, paddingRight: 0 }}>
                         <div>
                             <Routes>
                                 <Route path="/" element={<HomeTab bank={bankData} />} />
-                                <Route path="/withdraw" element={<WithdrawTab bank={bankData} />} />
-                                <Route path="/deposit" element={<DepositTab bank={bankData} />} />
-                                <Route path="/transfer" element={<TransferTab bank={bankData} />} />
-                                <Route path="/offshore" element={<OffshoreTab bank={bankData} />} />
-                                <Route path="/actions" element={<ActionsTab bank={bankData} />} />
                             </Routes>
                         </div>
-                        <a href="#" onClick={() => setBankData(null)} className="hover:underline text-white text-lg">
-                            Quitter
-                        </a>
-                    </div>
-                    <div>
-                        <Link
-                            style={{
-                                top: '247px',
-                                left: '659px',
-                                width: '100px',
-                            }}
-                            to="/engine"
-                        >
-                            <span>Moteur</span>
-                        </Link>
-                        <Link
-                            style={{
-                                top: '482px',
-                                left: '721px',
-                                width: '100px',
-                            }}
-                            to="/wheel"
-                        >
-                            <span>Roues</span>
-                        </Link>
-                        <Link
-                            style={{
-                                top: '173px',
-                                left: '814px',
-                                width: '100px',
-                            }}
-                            to="/door"
-                        >
-                            <span>Portières</span>
-                        </Link>
-                        <Link
-                            style={{
-                                top: '491px',
-                                left: '901px',
-                                width: '100px',
-                            }}
-                            to="/body"
-                        >
-                            <span>Carrosserie</span>
-                        </Link>
-                        <Link
-                            style={{
-                                top: '173px',
-                                left: '1000px',
-                                width: '100px',
-                            }}
-                            to="/window"
-                        >
-                            <span>Vitres</span>
-                        </Link>
-                        <Link
-                            style={{
-                                top: '421px',
-                                left: '1014px',
-                                width: '100px',
-                            }}
-                            to="/tank"
-                        >
-                            <span>Réservoir</span>
-                        </Link>
                     </div>
                 </div>
             </div>
