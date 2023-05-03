@@ -131,7 +131,7 @@ export class BankInvoiceProvider {
     }
 
     @OnEvent(ServerEvent.BANK_ACCEPT_INVOICE)
-    public async onAcceptInvoice(source: number, invoiceId: number): Promise<void> {
+    public async onAcceptInvoice(source: number, invoiceId: number, marked: number): Promise<void> {
         const player = this.playerService.getPlayer(source);
         if (player === null) {
             return;
@@ -139,7 +139,7 @@ export class BankInvoiceProvider {
         for (const [account, invoices] of Object.entries(this.Invoices)) {
             for (const [id, _] of Object.entries(invoices)) {
                 if (Number(id) === invoiceId) {
-                    await this.payInvoice(player, account, invoiceId);
+                    await this.payInvoice(player, account, invoiceId, marked);
                     return;
                 }
             }
@@ -177,7 +177,7 @@ export class BankInvoiceProvider {
         return null;
     }
 
-    private async payInvoice(player: PlayerData, account: string, id: number): Promise<void> {
+    private async payInvoice(player: PlayerData, account: string, id: number, marked: number): Promise<void> {
         if (
             !this.playerHaveAccessToInvoices(player, account) ||
             !this.Invoices[account] ||
@@ -189,23 +189,100 @@ export class BankInvoiceProvider {
         const invoice = this.Invoices[account][id];
         const emitter = this.playerService.getPlayerByCitizenId(invoice.emitter);
         if (player.charinfo.account === account) {
-            const moneyAmount = player.money.money;
-            const moneyMarkedAmount = player.money.marked_money;
-            if (moneyAmount + moneyMarkedAmount >= invoice.amount) {
-                let moneyTake = 0;
-                let markedMoneyTake = 0;
-                if (moneyMarkedAmount >= invoice.amount) {
-                    markedMoneyTake = invoice.amount;
-                } else {
-                    markedMoneyTake = moneyMarkedAmount;
-                    moneyTake = invoice.amount - moneyMarkedAmount;
-                }
-                this.playerMoneyService.remove(player.source, moneyTake, 'money');
-                this.playerMoneyService.remove(player.source, markedMoneyTake, 'marked_money');
+            if (marked !== null) {
+                const moneyAmount = player.money.money;
+                const moneyMarkedAmount = player.money.marked_money;
+                if (moneyAmount + moneyMarkedAmount >= invoice.amount) {
+                    let moneyTake = 0;
+                    let markedMoneyTake = 0;
+                    if (moneyMarkedAmount >= invoice.amount) {
+                        markedMoneyTake = invoice.amount;
+                    } else {
+                        markedMoneyTake = moneyMarkedAmount;
+                        moneyTake = invoice.amount - moneyMarkedAmount;
+                    }
+                    this.playerMoneyService.remove(player.source, moneyTake, 'money');
+                    this.playerMoneyService.remove(player.source, markedMoneyTake, 'marked_money');
+                    let success = this.bankAccountService.addMoney(invoice.emitterSafe, moneyTake, 'money');
+                    if (!success) {
+                        this.notifier.notify(
+                            player.source,
+                            "Le coffre de destination n'a pas de place pour cette somme",
+                            'error',
+                        );
+                        this.playerMoneyService.add(player.source, moneyTake, 'money');
+                        this.playerMoneyService.add(player.source, markedMoneyTake, 'marked_money');
+                        return;
+                    }
 
-                this.bankAccountService.addMoney(invoice.emitterSafe, moneyTake, 'money');
-                this.bankAccountService.addMoney(invoice.emitterSafe, markedMoneyTake, 'marked_money');
-                await this.prismaService.invoices.update({
+                    success = this.bankAccountService.addMoney(invoice.emitterSafe, markedMoneyTake, 'marked_money');
+                    if (!success) {
+                        this.notifier.notify(
+                            player.source,
+                            "Le coffre de destination n'a pas de place pour cette somme",
+                            'error',
+                        );
+                        this.playerMoneyService.add(player.source, moneyTake, 'money');
+                        this.playerMoneyService.add(player.source, markedMoneyTake, 'marked_money');
+                        this.bankAccountService.removeMoney(invoice.emitterSafe, moneyTake, 'money');
+                        return;
+                    }
+                } else {
+                    this.notifier.notify(player.source, "Vous n'avez pas assez d'argent", 'error');
+                    return;
+                }
+            } else if (this.playerMoneyService.remove(player.source, invoice.amount, 'money')) {
+                const success = this.bankAccountService.addMoney(invoice.emitterSafe, invoice.amount, 'money');
+                if (!success) {
+                    this.notifier.notify(
+                        player.source,
+                        "Le coffre de destination n'a pas de place pour cette somme",
+                        'error',
+                    );
+                    this.playerMoneyService.add(player.source, invoice.amount, 'money');
+                    return;
+                }
+            } else {
+                this.notifier.notify(player.source, "Vous n'avez pas assez d'argent", 'error');
+                return;
+            }
+            await this.prismaService.invoices.update({
+                where: {
+                    id: invoice.id,
+                },
+                data: {
+                    payed: true,
+                },
+            });
+            this.notifier.notify(player.source, 'Vous avez ~g~payé~s~ votre facture', 'success', 10000);
+            if (emitter) {
+                this.notifier.notify(emitter.source, `Votre facture ~b~${invoice.label}~s~ a été ~g~payée`, 'success');
+            }
+            this.monitor.publish(
+                'invoice_pay',
+                {
+                    player_source: player.source,
+                    invoice_kind: 'invoice',
+                    invoice_job: '',
+                },
+                {
+                    target_source: (emitter && emitter.source) || null,
+                    id: id,
+                    amount: invoice.amount,
+                    target_account: invoice.emitterSafe,
+                    source_account: invoice.targetAccount,
+                },
+            );
+            delete this.Invoices[account][id];
+            TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.source, id);
+        } else {
+            const result = this.bankAccountService.transferMoney(
+                invoice.targetAccount,
+                invoice.emitterSafe,
+                invoice.amount,
+            );
+            if (isOk(result)) {
+                this.prismaService.invoices.update({
                     where: {
                         id: invoice.id,
                     },
@@ -213,7 +290,7 @@ export class BankInvoiceProvider {
                         payed: true,
                     },
                 });
-                this.notifier.notify(player.source, 'Vous avez ~g~payé~s~ votre facture', 'success', 10000);
+                this.notifier.notify(player.source, 'Vous avez ~g~payé~s~ la facture de la société', 'success', 10000);
                 if (emitter) {
                     this.notifier.notify(
                         emitter.source,
@@ -226,7 +303,7 @@ export class BankInvoiceProvider {
                     {
                         player_source: player.source,
                         invoice_kind: 'invoice',
-                        invoice_job: '',
+                        invoice_job: player.job.id,
                     },
                     {
                         target_source: (emitter && emitter.source) || null,
@@ -239,58 +316,7 @@ export class BankInvoiceProvider {
                 delete this.Invoices[account][id];
                 TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.source, id);
             } else {
-                const result = this.bankAccountService.transferMoney(
-                    invoice.targetAccount,
-                    invoice.emitterSafe,
-                    invoice.amount,
-                );
-                if (isOk(result)) {
-                    this.prismaService.invoices.update({
-                        where: {
-                            id: invoice.id,
-                        },
-                        data: {
-                            payed: true,
-                        },
-                    });
-                    this.notifier.notify(
-                        player.source,
-                        'Vous avez ~g~payé~s~ la facture de la société',
-                        'success',
-                        10000,
-                    );
-                    if (emitter) {
-                        this.notifier.notify(
-                            emitter.source,
-                            `Votre facture ~b~${invoice.label}~s~ a été ~g~payée`,
-                            'success',
-                        );
-                    }
-                    this.monitor.publish(
-                        'invoice_pay',
-                        {
-                            player_source: player.source,
-                            invoice_kind: 'invoice',
-                            invoice_job: player.job.id,
-                        },
-                        {
-                            target_source: (emitter && emitter.source) || null,
-                            id: id,
-                            amount: invoice.amount,
-                            target_account: invoice.emitterSafe,
-                            source_account: invoice.targetAccount,
-                        },
-                    );
-                    delete this.Invoices[account][id];
-                    TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.source, id);
-                } else {
-                    this.notifier.notify(
-                        player.source,
-                        '~r~Echec~s~ du paiement la facture de la société',
-                        'error',
-                        10000,
-                    );
-                }
+                this.notifier.notify(player.source, '~r~Echec~s~ du paiement la facture de la société', 'error', 10000);
             }
         }
     }

@@ -1,3 +1,4 @@
+import { Invoice } from '@public/shared/bank';
 import { Injectable } from '../../core/decorators/injectable';
 import { Result } from '../../shared/result';
 import { emitRpc } from '@public/core/rpc';

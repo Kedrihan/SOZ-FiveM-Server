@@ -30,7 +30,6 @@ export type BankAtmLimitation = {
 };
 export type JobSafe = {
     label: string;
-    safeId: string;
     owner: string;
     position: Vector3;
     size: Vector2;

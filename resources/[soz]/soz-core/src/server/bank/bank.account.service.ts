@@ -1,4 +1,4 @@
-import { AtmLocations, BankAtmDefault, HouseSafeTiers } from '@public/config/bank';
+import { AtmLocations, BankAtmDefault, HouseSafeTiers, JobSafeMaxMoney } from '@public/config/bank';
 import { BankAccount, BankMetrics } from '@public/shared/bank';
 
 import { Injectable } from '../../core/decorators/injectable';
@@ -56,7 +56,7 @@ export class BankAccountService {
             if (!self.id.match('safe_%w+')) {
                 self.id = 'safe_' + self.id;
             }
-            self.max = 300000;
+            self.max = JobSafeMaxMoney;
         }
         if (self.type === 'house_safe') {
             self.max = HouseSafeTiers[0];
