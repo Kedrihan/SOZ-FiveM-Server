@@ -6,6 +6,7 @@ import { OnceLoader } from '../../core/loader/once.loader';
 import { ClientEvent, ServerEvent } from '../../shared/event';
 import { RpcServerEvent } from '../../shared/rpc';
 import { PrismaService } from '../database/prisma.service';
+import { BankAccountRepository } from './bank.account.repository';
 import { FuelStationRepository } from './fuel.station.repository';
 import { GarageRepository } from './garage.repository';
 import { JobGradeRepository } from './job.grade.repository';
@@ -33,6 +34,9 @@ export class RepositoryProvider {
     @Inject(UpwChargerRepository)
     private upwChargerRepository: UpwChargerRepository;
 
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
+
     @Inject(OnceLoader)
     private onceLoader: OnceLoader;
 
@@ -45,6 +49,7 @@ export class RepositoryProvider {
         this.repositories['jobGrade'] = this.jobGradeRepository;
         this.repositories['fuelStation'] = this.fuelStationRepository;
         this.repositories['upwCharger'] = this.upwChargerRepository;
+        this.repositories['bankAccount'] = this.bankAccountRepository;
     }
 
     @Once(OnceStep.DatabaseConnected)

@@ -10,7 +10,7 @@ import { getDistance, Vector3 } from '../../shared/polyzone/vector';
 import { RpcServerEvent } from '../../shared/rpc';
 import { Notifier } from '../notifier';
 import { QBCore } from '../qbcore';
-import { BankAccountService } from './bank.account.service';
+import { BankAccountRepository } from '../repository/bank.account.repository';
 
 @Provider()
 export class BankAtmProvider {
@@ -20,9 +20,8 @@ export class BankAtmProvider {
     @Inject(QBCore)
     private qbCore: QBCore;
 
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
-
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @Rpc(RpcServerEvent.ATM_GET_MONEY)
     public async getAtmMoney(source: number, atmType: string, coords: Vector3): Promise<number> {
@@ -34,7 +33,7 @@ export class BankAtmProvider {
     public async getAtmAccountCallback(
         source: number,
         atmType: string,
-        coords: Vector3
+        coords: Vector3,
     ): Promise<AtmMinimalInformation> {
         const coordsHash = this.getAtmHashByCoords(coords);
         const [account, created] = this.getAtmAccount(atmType, coords);
@@ -63,9 +62,9 @@ export class BankAtmProvider {
     public async hasEnoughLiquidityCallback(
         source: number,
         accountId: string,
-        amount: number
+        amount: number,
     ): Promise<[boolean, string]> {
-        const account = this.bankAccountService.getAccount(accountId);
+        const account = this.bankAccountRepository.getAccount(accountId);
         if (account == null) {
             this.notifier.notify(source, 'Compte invalide', 'error');
             return;
@@ -78,7 +77,7 @@ export class BankAtmProvider {
 
     @OnEvent(ServerEvent.BANK_REMOVE_LIQUIDITY)
     public async removeLiquidity(source: number, accountId: string, amount: number): Promise<void> {
-        const account = this.bankAccountService.getAccount(accountId);
+        const account = this.bankAccountRepository.getAccount(accountId);
         if (account == null) {
             this.notifier.notify(source, 'Compte invalide', 'error');
             return;
@@ -88,7 +87,7 @@ export class BankAtmProvider {
             return;
         }
         account.money -= amount;
-        this.bankAccountService.removeMoney(account, amount);
+        this.bankAccountRepository.removeMoney(account, amount);
     }
 
     @OnEvent(ServerEvent.ATM_REMOVE_LIQUIDITY)
@@ -97,24 +96,24 @@ export class BankAtmProvider {
         coords: Vector3,
         atmType: string,
         amount: number,
-        value: number
+        value: number,
     ): Promise<void> {
         const [account] = this.getAtmAccount(atmType, coords);
-        this.bankAccountService.removeMoney(account, amount * value);
+        this.bankAccountRepository.removeMoney(account, amount * value);
     }
 
     private getOrCreateAccount(accountName: string, coords: Vector3): [BankAccount, boolean] {
-        let account = this.bankAccountService.getAccount(accountName);
+        let account = this.bankAccountRepository.getAccount(accountName);
         let created = false;
         if (account == null) {
-            account = this.bankAccountService.createAccount(
+            account = this.bankAccountRepository.createAccount(
                 accountName,
                 'bank-atm',
                 'bank-atm',
                 accountName,
                 null,
                 null,
-                coords
+                coords,
             );
             created = true;
         }

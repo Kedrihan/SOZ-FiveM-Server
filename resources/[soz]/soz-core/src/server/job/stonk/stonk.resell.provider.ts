@@ -1,4 +1,4 @@
-import { BankAccountService } from '@public/server/bank/bank.account.service';
+import { BankAccountRepository } from '@public/server/repository/bank.account.repository';
 import { OnEvent } from '../../../core/decorators/event';
 import { Inject } from '../../../core/decorators/injectable';
 import { Provider } from '../../../core/decorators/provider';
@@ -32,8 +32,8 @@ export class StonkResellProvider {
     @Inject(ProgressService)
     private progressService: ProgressService;
 
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @Inject(Notifier)
     private notifier: Notifier;
@@ -50,7 +50,7 @@ export class StonkResellProvider {
                 JobType.CashTransfer,
                 playerJob,
                 playerJobGrade,
-                JobPermission.CashTransfer_ResaleBags
+                JobPermission.CashTransfer_ResaleBags,
             )
         ) {
             this.notifier.notify(source, `Vous n'avez pas les accréditations nécessaires.`, 'error');
@@ -74,13 +74,13 @@ export class StonkResellProvider {
                         item_label: outputItemLabel,
                         quantity: resellAmount,
                         position: toVector3Object(GetEntityCoords(GetPlayerPed(source)) as Vector3),
-                    }
+                    },
                 );
 
-                const transfer = this.bankAccountService.transferMoney(
+                const transfer = this.bankAccountRepository.transferMoney(
                     StonkConfig.bankAccount.farm,
                     StonkConfig.bankAccount.safe,
-                    StonkConfig.collection[item].society_gain * resellAmount
+                    StonkConfig.collection[item].society_gain * resellAmount,
                 );
                 if (isErr(transfer)) {
                     this.monitor.log('ERROR', 'Failed to transfer money to safe', {
@@ -117,7 +117,7 @@ export class StonkResellProvider {
                 disableCombat: true,
                 disableCarMovement: true,
                 disableMovement: true,
-            }
+            },
         );
 
         if (!completed) {

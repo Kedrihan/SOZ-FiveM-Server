@@ -1,4 +1,4 @@
-import { BankAccountService } from '@public/server/bank/bank.account.service';
+import { BankAccountRepository } from '@public/server/repository/bank.account.repository';
 import { Exportable } from '../../../core/decorators/exports';
 import { Inject } from '../../../core/decorators/injectable';
 import { Provider } from '../../../core/decorators/provider';
@@ -17,8 +17,8 @@ export class BennysOrderProvider {
     @Inject(PrismaService)
     private prismaService: PrismaService;
 
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @Inject(Notifier)
     private notifier: Notifier;
@@ -70,12 +70,12 @@ export class BennysOrderProvider {
             return;
         }
         const vehiclePrice = Math.ceil(vehicle.price * 0.01);
-        const transferred = this.bankAccountService.transferMoney('bennys', 'farm_bennys', vehiclePrice);
+        const transferred = this.bankAccountRepository.transferMoney('bennys', 'farm_bennys', vehiclePrice);
 
         if (isErr(transferred)) {
             this.notifier.notify(
                 source,
-                `Il faut ~r~${vehiclePrice.toLocaleString()}$~s~ sur le compte de l'entreprise.`
+                `Il faut ~r~${vehiclePrice.toLocaleString()}$~s~ sur le compte de l'entreprise.`,
             );
             return;
         } else {

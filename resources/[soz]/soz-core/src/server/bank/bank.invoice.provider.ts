@@ -17,7 +17,7 @@ import { InventoryManager } from '../inventory/inventory.manager';
 import { Notifier } from '../notifier';
 import { PlayerMoneyService } from '../player/player.money.service';
 import { PlayerService } from '../player/player.service';
-import { BankAccountService } from './bank.account.service';
+import { BankAccountRepository } from '../repository/bank.account.repository';
 import { Exportable } from '@public/core/decorators/exports';
 import { isOk } from '@public/shared/result';
 
@@ -25,8 +25,8 @@ import { isOk } from '@public/shared/result';
 export class BankInvoiceProvider {
     private Invoices: Record<string, Record<number, Invoice>> = {};
 
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @Inject(Notifier)
     private notifier: Notifier;
@@ -203,7 +203,7 @@ export class BankInvoiceProvider {
                     }
                     this.playerMoneyService.remove(player.source, moneyTake, 'money');
                     this.playerMoneyService.remove(player.source, markedMoneyTake, 'marked_money');
-                    let success = this.bankAccountService.addMoney(invoice.emitterSafe, moneyTake, 'money');
+                    let success = this.bankAccountRepository.addMoney(invoice.emitterSafe, moneyTake, 'money');
                     if (!success) {
                         this.notifier.notify(
                             player.source,
@@ -215,7 +215,7 @@ export class BankInvoiceProvider {
                         return;
                     }
 
-                    success = this.bankAccountService.addMoney(invoice.emitterSafe, markedMoneyTake, 'marked_money');
+                    success = this.bankAccountRepository.addMoney(invoice.emitterSafe, markedMoneyTake, 'marked_money');
                     if (!success) {
                         this.notifier.notify(
                             player.source,
@@ -224,7 +224,7 @@ export class BankInvoiceProvider {
                         );
                         this.playerMoneyService.add(player.source, moneyTake, 'money');
                         this.playerMoneyService.add(player.source, markedMoneyTake, 'marked_money');
-                        this.bankAccountService.removeMoney(invoice.emitterSafe, moneyTake, 'money');
+                        this.bankAccountRepository.removeMoney(invoice.emitterSafe, moneyTake, 'money');
                         return;
                     }
                 } else {
@@ -232,7 +232,7 @@ export class BankInvoiceProvider {
                     return;
                 }
             } else if (this.playerMoneyService.remove(player.source, invoice.amount, 'money')) {
-                const success = this.bankAccountService.addMoney(invoice.emitterSafe, invoice.amount, 'money');
+                const success = this.bankAccountRepository.addMoney(invoice.emitterSafe, invoice.amount, 'money');
                 if (!success) {
                     this.notifier.notify(
                         player.source,
@@ -276,7 +276,7 @@ export class BankInvoiceProvider {
             delete this.Invoices[account][id];
             TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.source, id);
         } else {
-            const result = this.bankAccountService.transferMoney(
+            const result = this.bankAccountRepository.transferMoney(
                 invoice.targetAccount,
                 invoice.emitterSafe,
                 invoice.amount,

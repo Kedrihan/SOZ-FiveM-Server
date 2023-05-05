@@ -9,6 +9,15 @@ export const DefaultAccountMoney: Record<string, number> = {
     player: 5000,
     business: 200000,
 };
+export const BankAccountTypes: string[] = [
+    'player',
+    'business',
+    'safestorages',
+    'offshore',
+    'bank_atm',
+    'farm',
+    'house_safe',
+];
 export const HouseSafeTiers: Record<number, number> = {
     0: 10000,
     1: 20000,

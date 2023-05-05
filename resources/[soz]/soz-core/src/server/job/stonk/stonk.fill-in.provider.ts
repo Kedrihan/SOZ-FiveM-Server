@@ -1,4 +1,4 @@
-import { BankAccountService } from '@public/server/bank/bank.account.service';
+import { BankAccountRepository } from '@public/server/repository/bank.account.repository';
 import { OnEvent } from '../../../core/decorators/event';
 import { Inject } from '../../../core/decorators/injectable';
 import { Provider } from '../../../core/decorators/provider';
@@ -32,8 +32,8 @@ export class StonkFillInProvider {
     @Inject(ProgressService)
     private progressService: ProgressService;
 
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @Inject(Notifier)
     private notifier: Notifier;
@@ -47,7 +47,7 @@ export class StonkFillInProvider {
         bank: string,
         item: StonkBagType,
         currentBalance: number,
-        maxBalance: number
+        maxBalance: number,
     ) {
         const [playerJob, playerJobGrade] = this.playerService.getPlayerJobAndGrade(source);
 
@@ -56,7 +56,7 @@ export class StonkFillInProvider {
                 JobType.CashTransfer,
                 playerJob,
                 playerJobGrade,
-                JobPermission.CashTransfer_FillIn
+                JobPermission.CashTransfer_FillIn,
             )
         ) {
             this.notifier.notify(source, `Vous n'avez pas les accréditations nécessaires.`, 'error');
@@ -85,13 +85,13 @@ export class StonkFillInProvider {
                         item_label: outputItemLabel,
                         amount: fillAmount,
                         position: toVector3Object(GetEntityCoords(GetPlayerPed(source)) as Vector3),
-                    }
+                    },
                 );
 
-                const transfer = this.bankAccountService.transferMoney(
+                const transfer = this.bankAccountRepository.transferMoney(
                     StonkConfig.bankAccount.bankRefill,
                     bank.includes('atm') ? bank : `bank_${bank}`,
-                    StonkConfig.collection[item].refill_value * fillAmount
+                    StonkConfig.collection[item].refill_value * fillAmount,
                 );
                 if (isErr(transfer)) {
                     this.monitor.log('ERROR', 'Failed to transfer money to safe', {
@@ -101,10 +101,10 @@ export class StonkFillInProvider {
                     });
                 }
 
-                const transferSociety = this.bankAccountService.transferMoney(
+                const transferSociety = this.bankAccountRepository.transferMoney(
                     StonkConfig.bankAccount.farm,
                     StonkConfig.bankAccount.safe,
-                    StonkConfig.collection[item].society_gain * fillAmount
+                    StonkConfig.collection[item].society_gain * fillAmount,
                 );
                 if (isErr(transferSociety)) {
                     this.monitor.log('ERROR', 'Failed to transfer money to safe', {
@@ -139,7 +139,7 @@ export class StonkFillInProvider {
         source: number,
         item: StonkBagType,
         currentBalance: number,
-        maxBalance: number
+        maxBalance: number,
     ): Promise<[boolean, number]> {
         const { completed } = await this.progressService.progress(
             source,
@@ -155,7 +155,7 @@ export class StonkFillInProvider {
                 disableCombat: true,
                 disableCarMovement: true,
                 disableMovement: true,
-            }
+            },
         );
 
         if (!completed) {

@@ -1,4 +1,4 @@
-import { BankAccountService } from '@public/server/bank/bank.account.service';
+import { BankAccountRepository } from '@public/server/repository/bank.account.repository';
 import { Once, OnceStep, OnEvent } from '../../../core/decorators/event';
 import { Inject } from '../../../core/decorators/injectable';
 import { Provider } from '../../../core/decorators/provider';
@@ -33,8 +33,8 @@ export class StonkDeliveryProvider {
     @Inject(ProgressService)
     private progressService: ProgressService;
 
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @Inject(FieldProvider)
     private fieldService: FieldProvider;
@@ -89,7 +89,7 @@ export class StonkDeliveryProvider {
                 JobType.CashTransfer,
                 playerJob,
                 playerJobGrade,
-                JobPermission.CashTransfer_CollectSecure
+                JobPermission.CashTransfer_CollectSecure,
             )
         ) {
             this.notifier.notify(source, `Vous n'avez pas les accreditations nécessaires.`, 'error');
@@ -115,7 +115,7 @@ export class StonkDeliveryProvider {
                 disableCombat: true,
                 disableCarMovement: true,
                 disableMovement: true,
-            }
+            },
         );
 
         if (!completed) {
@@ -159,7 +159,7 @@ export class StonkDeliveryProvider {
                 disableCombat: true,
                 disableCarMovement: true,
                 disableMovement: true,
-            }
+            },
         );
 
         if (!completed) {
@@ -169,10 +169,10 @@ export class StonkDeliveryProvider {
         if (this.inventoryManager.removeItemFromInventory(source, StonkConfig.delivery.item, 1)) {
             this.notifier.notify(source, `Vous avez ~g~déposé~s~ une caisse.`);
 
-            const transfer = this.bankAccountService.transferMoney(
+            const transfer = this.bankAccountRepository.transferMoney(
                 StonkConfig.bankAccount.farm,
                 StonkConfig.bankAccount.safe,
-                StonkConfig.delivery.society_gain
+                StonkConfig.delivery.society_gain,
             );
             if (isErr(transfer)) {
                 this.monitor.log('ERROR', 'Failed to transfer money to safe', {

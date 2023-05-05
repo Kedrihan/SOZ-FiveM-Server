@@ -11,8 +11,8 @@ import { RpcServerEvent } from '../../../shared/rpc';
 import { getDefaultVehicleCondition } from '../../../shared/vehicle/vehicle';
 import { PrismaService } from '../../database/prisma.service';
 import { Notifier } from '../../notifier';
-import { BankAccountService } from '@public/server/bank/bank.account.service';
 import { isErr } from '@public/shared/result';
+import { BankAccountRepository } from '@public/server/repository/bank.account.repository';
 
 @Provider()
 export class UpwOrderProvider {
@@ -22,8 +22,8 @@ export class UpwOrderProvider {
     @Inject(Notifier)
     private notifier: Notifier;
 
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     private ordersInProgress: Map<string, UpwOrder> = new Map();
 
@@ -82,12 +82,12 @@ export class UpwOrderProvider {
             return;
         }
         const vehiclePrice = Math.ceil(vehicle.price * 0.01);
-        const transferred = this.bankAccountService.transferMoney('upw', 'farm_upw', vehiclePrice);
+        const transferred = this.bankAccountRepository.transferMoney('upw', 'farm_upw', vehiclePrice);
 
         if (isErr(transferred)) {
             this.notifier.notify(
                 source,
-                `Il faut ~r~${vehiclePrice.toLocaleString()}$~s~ sur le compte de l'entreprise.`
+                `Il faut ~r~${vehiclePrice.toLocaleString()}$~s~ sur le compte de l'entreprise.`,
             );
             return;
         } else {

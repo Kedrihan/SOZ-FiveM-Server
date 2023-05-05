@@ -6,13 +6,13 @@ import { Provider } from '../../core/decorators/provider';
 import { JobService } from '../job.service';
 import { Notifier } from '../notifier';
 import { QBCore } from '../qbcore';
-import { BankAccountService } from './bank.account.service';
+import { BankAccountRepository } from '../repository/bank.account.repository';
 import { isOk } from '@public/shared/result';
 
 @Provider()
 export class BankPaycheckProvider {
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @Inject(JobService)
     private jobService: JobService;
@@ -39,10 +39,10 @@ export class BankPaycheckProvider {
                 if (!player.PlayerData.job.onduty) {
                     payment = Math.ceil((payment * 30) / 100);
                 }
-                const result = this.bankAccountService.transferMoney(
+                const result = this.bankAccountRepository.transferMoney(
                     player.PlayerData.job.id,
                     player.PlayerData.charinfo.account,
-                    payment
+                    payment,
                 );
                 if (isOk(result)) {
                     this.notifier.advancedNotify(
@@ -51,7 +51,7 @@ export class BankPaycheckProvider {
                         'Mouvement bancaire',
                         "Un versement vient d'être réalisé sur votre compte",
                         'CHAR_BANK_MAZE',
-                        'success'
+                        'success',
                     );
                     this.monitor.publish(
                         'paycheck',
@@ -60,7 +60,7 @@ export class BankPaycheckProvider {
                         },
                         {
                             amount: payment,
-                        }
+                        },
                     );
                 } else {
                     console.log(result.err);

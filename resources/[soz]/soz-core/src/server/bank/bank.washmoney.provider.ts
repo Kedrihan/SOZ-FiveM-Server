@@ -3,12 +3,12 @@ import { Once } from '@public/core/decorators/event';
 
 import { Inject } from '../../core/decorators/injectable';
 import { Provider } from '../../core/decorators/provider';
-import { BankAccountService } from './bank.account.service';
+import { BankAccountRepository } from '../repository/bank.account.repository';
 
 @Provider()
 export class BankWashMoneyProvider {
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @Once()
     public async onOnce() {
@@ -16,9 +16,9 @@ export class BankWashMoneyProvider {
     }
 
     private washMoney() {
-        const offshoreAccounts = this.bankAccountService
+        const offshoreAccounts = this.bankAccountRepository
             .getAllAccounts()
-            .filter(account => account.id.includes('offshore_'));
+            .filter((account) => account.id.includes('offshore_'));
         const maxWashAmount = Math.ceil(OffShoreMaxWashAmount / offshoreAccounts.length - 0.5);
 
         for (const account of offshoreAccounts) {
@@ -28,8 +28,8 @@ export class BankWashMoneyProvider {
                 toWash = account.marked_money;
             }
 
-            this.bankAccountService.removeMoney(account.id, toWash, 'marked_money');
-            this.bankAccountService.addMoney(account.id.replace('offshore_', ''), toWash, 'money');
+            this.bankAccountRepository.removeMoney(account.id, toWash, 'marked_money');
+            this.bankAccountRepository.addMoney(account.id.replace('offshore_', ''), toWash, 'money');
         }
     }
 }

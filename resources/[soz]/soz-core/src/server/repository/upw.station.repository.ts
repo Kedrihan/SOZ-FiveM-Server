@@ -11,7 +11,7 @@ export class UpwChargerRepository extends Repository<Record<number, UpwCharger>>
     private prismaService: PrismaService;
 
     protected async load(): Promise<Record<number, UpwCharger>> {
-        const stations = await this.prismaService.upw_chargers.findMany();
+        const stations = []; //await this.prismaService.upw_chargers.findMany();
         const upwCharger: Record<number, UpwCharger> = {};
 
         for (const station of stations) {

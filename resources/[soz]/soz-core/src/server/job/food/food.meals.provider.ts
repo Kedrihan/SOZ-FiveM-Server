@@ -1,4 +1,4 @@
-import { BankAccountService } from '@public/server/bank/bank.account.service';
+import { BankAccountRepository } from '@public/server/repository/bank.account.repository';
 import { OnEvent } from '../../../core/decorators/event';
 import { Inject } from '../../../core/decorators/injectable';
 import { Provider } from '../../../core/decorators/provider';
@@ -29,8 +29,8 @@ export class FoodMealsProvider {
     @Inject(InventoryManager)
     private inventoryManager: InventoryManager;
 
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @OnEvent(ServerEvent.FOOD_RETRIEVE_STATE)
     onRetrieveState(source: number) {
@@ -47,7 +47,7 @@ export class FoodMealsProvider {
             this.notifier.notify(source, 'Une commande est déjà en cours.');
             return;
         }
-        const transferred = this.bankAccountService.transferMoney('food', 'farm_food', this.ORDER_PRICE);
+        const transferred = this.bankAccountRepository.transferMoney('food', 'farm_food', this.ORDER_PRICE);
         if (isOk(transferred)) {
             const date = new Date();
             date.setTime(date.getTime() + 60 * 60 * 1000); // One hour later...
@@ -58,12 +58,12 @@ export class FoodMealsProvider {
 
             this.notifier.notify(
                 source,
-                `Merci pour votre commande ! Cela fera ~r~${this.ORDER_PRICE.toLocaleString()}$~s~. Celle-ci sera prête dans ~g~une heure~s~.`
+                `Merci pour votre commande ! Cela fera ~r~${this.ORDER_PRICE.toLocaleString()}$~s~. Celle-ci sera prête dans ~g~une heure~s~.`,
             );
         } else {
             this.notifier.notify(
                 source,
-                `Il te manque ~r~${this.ORDER_PRICE.toLocaleString()}$~s~ sur le compte de l'entreprise.`
+                `Il te manque ~r~${this.ORDER_PRICE.toLocaleString()}$~s~ sur le compte de l'entreprise.`,
             );
         }
     }
@@ -76,12 +76,13 @@ export class FoodMealsProvider {
         }
         if (this.orderReadyDate.getTime() > new Date().getTime()) {
             const minutesLeft = Math.round(
-                ((this.orderReadyDate.getTime() - (new Date().getTime() % 86400000)) % 3600000) / 60000
+                ((this.orderReadyDate.getTime() - (new Date().getTime() % 86400000)) % 3600000) / 60000,
             );
             this.notifier.notify(
                 source,
-                `Votre commande n'est pas encore prête ! Revenez dans ~r~${minutesLeft} minute${minutesLeft > 1 ? 's' : ''
-                }~s~.`
+                `Votre commande n'est pas encore prête ! Revenez dans ~r~${minutesLeft} minute${
+                    minutesLeft > 1 ? 's' : ''
+                }~s~.`,
             );
             return;
         } else if (!this.inventoryManager.canCarryItem(source, this.MEAL_BOX_ITEM, this.MEAL_BOXES_PER_ORDER)) {

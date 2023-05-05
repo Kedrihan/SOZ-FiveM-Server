@@ -5,9 +5,9 @@ import { Provider } from '../../core/decorators/provider';
 import { ClientEvent } from '../../shared/event';
 import { JobType } from '../../shared/job';
 import { PlayerLicenceType } from '../../shared/player';
-import { BankAccountService } from '../bank/bank.account.service';
 import { Notifier } from '../notifier';
 import { PlayerService } from '../player/player.service';
+import { BankAccountRepository } from '../repository/bank.account.repository';
 import { VehicleRepository } from '../repository/vehicle.repository';
 import { VehicleStateService } from './vehicle.state.service';
 
@@ -22,8 +22,8 @@ export class VehicleRadarProvider {
     @Inject(VehicleRepository)
     private vehicleRepository: VehicleRepository;
 
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @Inject(Notifier)
     private notifier: Notifier;
@@ -40,7 +40,7 @@ export class VehicleRadarProvider {
         radarID: number,
         vehicleID: number,
         vehicleClass: number,
-        streetName: string
+        streetName: string,
     ) {
         const player = this.playerService.getPlayer(source);
         const radar = RadarList[radarID];
@@ -66,7 +66,7 @@ export class VehicleRadarProvider {
                     RadarMessage.FlashVehicle,
                     radarMessage + '~g~Véhicule autorisé~s~',
                     'CHAR_BLOCKED',
-                    'info'
+                    'info',
                 );
                 return;
             }
@@ -127,10 +127,10 @@ export class VehicleRadarProvider {
                     vehicle_model: vehicleModel,
                     vehicle_type: vehicleType,
                     position: vehiclePosition,
-                }
+                },
             );
 
-            this.bankAccountService.transferMoney(player.charinfo.account, radar.station, fine);
+            this.bankAccountRepository.transferMoney(player.charinfo.account, radar.station, fine);
 
             this.notifier.advancedNotify(
                 source,
@@ -138,7 +138,7 @@ export class VehicleRadarProvider {
                 RadarMessage.FlashVehicle,
                 radarMessage,
                 'CHAR_BLOCKED',
-                'info'
+                'info',
             );
 
             this.notifier.advancedNotifyOnDutyWorkers(
@@ -148,7 +148,7 @@ export class VehicleRadarProvider {
                 'CHAR_BLOCKED',
                 'info',
                 [JobType.BCSO, JobType.LSPD],
-                player => {
+                (player) => {
                     const currentVehicle = GetVehiclePedIsIn(GetPlayerPed(player.source), false);
                     if (currentVehicle && RadarInformedVehicle.includes(GetEntityModel(currentVehicle))) {
                         const ped = GetPlayerPed(player.source);
@@ -158,7 +158,7 @@ export class VehicleRadarProvider {
                         );
                     }
                     return false;
-                }
+                },
             );
         }
     }

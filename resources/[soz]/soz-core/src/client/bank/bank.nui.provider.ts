@@ -13,7 +13,7 @@ import { Result, isErr, isOk } from '@public/shared/result';
 import { BankAtmDefault, ErrorMessage } from '@public/config/bank';
 
 @Provider()
-export class BankInvoiceProvider {
+export class BankNuiProvider {
     private usedBankAtm;
 
     @Inject(Notifier)
@@ -30,24 +30,19 @@ export class BankInvoiceProvider {
 
     private playAnimation() {
         if (!IsNuiFocused()) {
-            this.animationService.playAnimation(
-                {
-                    base: {
-                        dictionary: 'anim@mp_atm@enter',
-                        name: 'enter',
-                        blendInSpeed: 8.0,
-                        blendOutSpeed: -8.0,
-                        duration: 3000,
-                        options: {
-                            enablePlayerControl: false,
-                            onlyUpperBody: false,
-                        },
+            this.animationService.playAnimation({
+                base: {
+                    dictionary: 'anim@mp_atm@enter',
+                    name: 'enter',
+                    blendInSpeed: 8.0,
+                    blendOutSpeed: -8.0,
+                    duration: 3000,
+                    options: {
+                        enablePlayerControl: false,
+                        onlyUpperBody: false,
                     },
                 },
-                {
-                    noClearPedTask: true,
-                },
-            );
+            });
         }
     }
     private getATMOrBankAccount(atm: string, bank: string) {

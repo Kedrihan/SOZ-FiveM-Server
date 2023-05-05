@@ -13,14 +13,14 @@ import { Provider } from '../../core/decorators/provider';
 import { Notifier } from '../notifier';
 import { PlayerMoneyService } from '../player/player.money.service';
 import { PlayerService } from '../player/player.service';
-import { BankAccountService } from './bank.account.service';
+import { BankAccountRepository } from '../repository/bank.account.repository';
 import { Exportable } from '@public/core/decorators/exports';
 import { Err, Ok, Result } from '@public/shared/result';
 
 @Provider()
 export class BankProvider {
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @Inject(PlayerMoneyService)
     private playerMoneyService: PlayerMoneyService;
@@ -41,13 +41,13 @@ export class BankProvider {
         if (!player) return null;
 
         if (!account) {
-            account = this.bankAccountService.getAccount(player.charinfo.account);
+            account = this.bankAccountRepository.getAccount(player.charinfo.account);
         } else {
             const isMatch = account.search(/\d\d\d\w\d\d\d\d\w\d\d\d/) !== -1;
             if (isMatch) {
-                account = this.bankAccountService.getAccount(account);
+                account = this.bankAccountRepository.getAccount(account);
             } else if (this.jobPermissionService.hasPermission(player.job.id, JobPermission.SocietyBankAccount)) {
-                account = this.bankAccountService.getAccount(account);
+                account = this.bankAccountRepository.getAccount(account);
             } else {
                 return null;
             }
@@ -59,7 +59,7 @@ export class BankProvider {
             money: groupDigits(player.money.money) + '$',
             offshore: null,
         };
-        const offshoreAccount = this.bankAccountService.getAccount('offshore_' + account.id);
+        const offshoreAccount = this.bankAccountRepository.getAccount('offshore_' + account.id);
         if (offshoreAccount) {
             bankingInformations.offshore = groupDigits(offshoreAccount.marked_money) + '$';
         }
@@ -69,12 +69,12 @@ export class BankProvider {
     @Rpc(RpcServerEvent.BANK_CREATE_OFFSHORE_ACCOUNT)
     public async createOffshoreAccount(source: number, account: string): Promise<Result<boolean, string>> {
         const player = this.playerService.getPlayer(source);
-        const offshore = this.bankAccountService.getAccount('offshore_' + account);
+        const offshore = this.bankAccountRepository.getAccount('offshore_' + account);
         if (this.jobPermissionService.hasPermission(player.job.id, JobPermission.SocietyBankAccount)) {
             if (offshore) {
                 return Err('already_exist');
             }
-            this.bankAccountService.createAccount(
+            this.bankAccountRepository.createAccount(
                 'offshore_' + account,
                 'Compte offshore ' + account,
                 'offshore',
@@ -97,7 +97,7 @@ export class BankProvider {
         if (this.jobPermissionService.hasPermission(player.job.id, JobPermission.SocietyBankAccount)) {
             if (amount <= currentMoney) {
                 if (this.playerMoneyService.remove(player.source, amount, 'marked_money')) {
-                    this.bankAccountService.addMoney('offshore_' + accountTarget, amount, 'marked_money');
+                    this.bankAccountRepository.addMoney('offshore_' + accountTarget, amount, 'marked_money');
                     return Ok(true);
                 } else {
                     return Err('offshore_full');
@@ -122,20 +122,20 @@ export class BankProvider {
         if (accountSource === 'player') {
             if (amount <= currentMoney) {
                 if (this.playerMoneyService.remove(player.source, amount, 'money')) {
-                    this.bankAccountService.addMoney(accountTarget, amount);
+                    this.bankAccountRepository.addMoney(accountTarget, amount);
                     return Ok(true);
                 }
             }
         } else if (accountTarget === 'player') {
-            const accountMoney = this.bankAccountService.getAccount(accountSource).money;
+            const accountMoney = this.bankAccountRepository.getAccount(accountSource).money;
             if (amount <= accountMoney) {
                 if (this.playerMoneyService.add(player.source, amount, 'money')) {
-                    this.bankAccountService.removeMoney(accountSource, amount);
+                    this.bankAccountRepository.removeMoney(accountSource, amount);
                     return Ok(true);
                 }
             }
         } else {
-            return this.bankAccountService.transferMoney(accountSource, accountTarget, amount);
+            return this.bankAccountRepository.transferMoney(accountSource, accountTarget, amount);
         }
         return Err('unknown');
     }
@@ -144,10 +144,10 @@ export class BankProvider {
     public async transferCashMoney(source: number, target: number, amount: number): Promise<Result<boolean, string>> {
         const targetPlayer = this.playerService.getPlayer(target);
 
-        const currentMoney = this.bankAccountService.getAccount(source).money;
+        const currentMoney = this.bankAccountRepository.getAccount(source).money;
         if (amount <= currentMoney) {
             if (this.playerMoneyService.remove(targetPlayer.source, amount, 'money')) {
-                this.bankAccountService.removeMoney(source, amount);
+                this.bankAccountRepository.removeMoney(source, amount);
                 return Ok(true);
             } else {
                 return Err('could_not_add_money');
@@ -160,8 +160,8 @@ export class BankProvider {
 
     @Rpc(RpcServerEvent.BANK_OPEN_SAFE_STORAGE)
     public async openSafeStorage(source: number, safeStorage: any): Promise<[boolean, number, number]> {
-        const account = this.bankAccountService.getAccount(safeStorage);
-        if (account && this.bankAccountService.accessGranted(account, source)) {
+        const account = this.bankAccountRepository.getAccount(safeStorage);
+        if (account && this.bankAccountRepository.accessGranted(account, source)) {
             return [true, account.money, account.marked_money];
         }
         return [false, 0, 0];
@@ -175,13 +175,13 @@ export class BankProvider {
         }
         const inside = player.metadata.inside;
         const apartmentTier = exports['soz-housing'].GetApartmentTier(inside.property, inside.apartment);
-        let account = this.bankAccountService.getAccount(safeStorage);
+        let account = this.bankAccountRepository.getAccount(safeStorage);
 
         if (!account) {
-            account = this.bankAccountService.createAccount(safeStorage, safeStorage, 'house_safe', safeStorage);
+            account = this.bankAccountRepository.createAccount(safeStorage, safeStorage, 'house_safe', safeStorage);
         }
 
-        if (this.bankAccountService.accessGranted(account, source)) {
+        if (this.bankAccountRepository.accessGranted(account, source)) {
             account.max = HouseSafeTiers[apartmentTier];
             return [true, account.money, account.marked_money, account.max];
         } else {
@@ -192,7 +192,7 @@ export class BankProvider {
     @Exportable('GetPlayerAccount')
     public async getPlayerAccount(source: number): Promise<any> {
         const player = this.playerService.getPlayer(source);
-        const account = this.bankAccountService.getAccount(player.charinfo.account);
+        const account = this.bankAccountRepository.getAccount(player.charinfo.account);
         return { name: player.name, account: account.id, balance: account.money };
     }
 
@@ -211,7 +211,7 @@ export class BankProvider {
         }
 
         if (this.playerMoneyService.remove(player.source, amount, money_type)) {
-            const added = this.bankAccountService.addMoney(safeStorage, amount, money_type);
+            const added = this.bankAccountRepository.addMoney(safeStorage, amount, money_type);
             if (added) {
                 this.notifier.notify(source, `Vous avez déposé ~g~$${amount}`);
             } else {
@@ -229,19 +229,19 @@ export class BankProvider {
         amount: number,
     ): Promise<void> {
         const player = this.playerService.getPlayer(source);
-        const currentMoney = this.bankAccountService.getMoney(safeStorage, money_type);
+        const currentMoney = this.bankAccountRepository.getMoney(safeStorage, money_type);
         if (amount > currentMoney) {
             this.notifier.notify(source, "Vous n'avez pas assez d'argent", 'error');
             return;
         }
         if (this.playerMoneyService.add(player.source, amount, money_type)) {
-            this.bankAccountService.removeMoney(safeStorage, amount, money_type);
+            this.bankAccountRepository.removeMoney(safeStorage, amount, money_type);
             this.notifier.notify(source, `Vous avez retiré ~g~$${amount}`);
         }
     }
 
     @OnEvent(ServerEvent.BANK_TRANSFER_MONEY)
     public async onTransferMoney(accountSource: string, accountTarget: string, amount: number): Promise<void> {
-        this.bankAccountService.transferMoney(accountSource, accountTarget, amount);
+        this.bankAccountRepository.transferMoney(accountSource, accountTarget, amount);
     }
 }

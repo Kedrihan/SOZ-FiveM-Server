@@ -1,7 +1,7 @@
 import { OnEvent } from '@core/decorators/event';
 import { Inject } from '@core/decorators/injectable';
 import { Provider } from '@core/decorators/provider';
-import { BankAccountService } from '@public/server/bank/bank.account.service';
+import { BankAccountRepository } from '@public/server/repository/bank.account.repository';
 import { ServerEvent } from '@public/shared/event';
 import { TaxiConfig } from '@public/shared/job/cjr';
 import { Monitor } from '@public/shared/monitor';
@@ -10,18 +10,18 @@ import { isErr } from '@public/shared/result';
 
 @Provider()
 export class TaxiProvider {
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @Inject(Monitor)
     private monitor: Monitor;
 
     @OnEvent(ServerEvent.TAXI_NPC_PAY)
     public async decrement(source: number, amount: number) {
-        const transfer = this.bankAccountService.transferMoney(
+        const transfer = this.bankAccountRepository.transferMoney(
             TaxiConfig.bankAccount.farm,
             TaxiConfig.bankAccount.safe,
-            amount
+            amount,
         );
         if (isErr(transfer)) {
             this.monitor.log('ERROR', 'Failed to transfer money to safe', {
@@ -39,7 +39,7 @@ export class TaxiProvider {
             {
                 amount: amount,
                 position: toVector3Object(GetEntityCoords(GetPlayerPed(source)) as Vector3),
-            }
+            },
         );
     }
 }

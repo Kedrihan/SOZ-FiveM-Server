@@ -6,10 +6,10 @@ import { Logger } from '../../core/logger';
 import { uuidv4, wait } from '../../core/utils';
 import { ClientEvent, ServerEvent } from '../../shared/event';
 import { Feature, isFeatureEnabled } from '../../shared/features';
-import { BankAccountService } from '../bank/bank.account.service';
 import { PrismaService } from '../database/prisma.service';
 import { PlayerCleanService } from '../player/player.clean.service';
 import { QBCore } from '../qbcore';
+import { BankAccountRepository } from '../repository/bank.account.repository';
 import { VehicleDealershipProvider } from '../vehicle/vehicle.dealership.provider';
 import { WeatherProvider } from '../weather/weather.provider';
 
@@ -32,8 +32,8 @@ export class RebootProvider {
     @Inject(PlayerCleanService)
     private playerCleanService: PlayerCleanService;
 
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     @Inject(Logger)
     private logger: Logger;
@@ -95,7 +95,7 @@ export class RebootProvider {
             },
         });
 
-        this.bankAccountService.saveAccounts();
+        this.bankAccountRepository.saveAccounts();
         exports['soz-upw'].saveUpw();
         exports['soz-inventory'].saveInventories();
         exports['soz-inventory'].stopSyncInventories();
@@ -184,7 +184,7 @@ export class RebootProvider {
                 type: `reboot_${minutes}`,
                 message: `Un ouragan arrive à toute allure ! Il devrait frapper le coeur de San Andreas d'ici ${minutes} minutes. Veuillez ranger vos véhicules et vous abriter ! Votre sécurité est primordiale.`,
                 reporter: 'San Andreas Météo',
-            }
+            },
         );
     }
 }

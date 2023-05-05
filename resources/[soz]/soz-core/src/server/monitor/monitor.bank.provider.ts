@@ -3,12 +3,12 @@ import { Gauge } from 'prom-client';
 
 import { Provider } from '../../core/decorators/provider';
 import { Tick } from '../../core/decorators/tick';
-import { BankAccountService } from '../bank/bank.account.service';
+import { BankAccountRepository } from '../repository/bank.account.repository';
 
 @Provider()
 export class MonitorBankProvider {
-    @Inject(BankAccountService)
-    private bankAccountService: BankAccountService;
+    @Inject(BankAccountRepository)
+    private bankAccountRepository: BankAccountRepository;
 
     private accountMoney: Gauge<string> = new Gauge({
         name: 'soz_bank_account_money',
@@ -24,7 +24,7 @@ export class MonitorBankProvider {
 
     @Tick(5000, 'monitor:bank:metrics')
     public async onTick() {
-        const metrics = this.bankAccountService.getMetrics();
+        const metrics = this.bankAccountRepository.getMetrics();
 
         for (const metric of metrics) {
             const labels = {
