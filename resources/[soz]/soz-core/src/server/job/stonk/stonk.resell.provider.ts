@@ -77,7 +77,7 @@ export class StonkResellProvider {
                     },
                 );
 
-                const transfer = this.bankAccountRepository.transferMoney(
+                const transfer = await this.bankAccountRepository.transferMoney(
                     StonkConfig.bankAccount.farm,
                     StonkConfig.bankAccount.safe,
                     StonkConfig.collection[item].society_gain * resellAmount,

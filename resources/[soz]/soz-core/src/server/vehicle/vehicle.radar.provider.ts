@@ -130,7 +130,7 @@ export class VehicleRadarProvider {
                 },
             );
 
-            this.bankAccountRepository.transferMoney(player.charinfo.account, radar.station, fine);
+            await this.bankAccountRepository.transferMoney(player.charinfo.account, radar.station, fine);
 
             this.notifier.advancedNotify(
                 source,

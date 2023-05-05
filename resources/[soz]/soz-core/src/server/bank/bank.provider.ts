@@ -135,7 +135,7 @@ export class BankProvider {
                 }
             }
         } else {
-            return this.bankAccountRepository.transferMoney(accountSource, accountTarget, amount);
+            return await this.bankAccountRepository.transferMoney(accountSource, accountTarget, amount);
         }
         return Err('unknown');
     }
@@ -178,7 +178,12 @@ export class BankProvider {
         let account = this.bankAccountRepository.getAccount(safeStorage);
 
         if (!account) {
-            account = this.bankAccountRepository.createAccount(safeStorage, safeStorage, 'house_safe', safeStorage);
+            account = await this.bankAccountRepository.createAccount(
+                safeStorage,
+                safeStorage,
+                'house_safe',
+                safeStorage,
+            );
         }
 
         if (this.bankAccountRepository.accessGranted(account, source)) {
@@ -242,6 +247,6 @@ export class BankProvider {
 
     @OnEvent(ServerEvent.BANK_TRANSFER_MONEY)
     public async onTransferMoney(accountSource: string, accountTarget: string, amount: number): Promise<void> {
-        this.bankAccountRepository.transferMoney(accountSource, accountTarget, amount);
+        await this.bankAccountRepository.transferMoney(accountSource, accountTarget, amount);
     }
 }

@@ -86,7 +86,7 @@ export class BankProvider {
                         color: 28,
                         scale: 1.0,
                     });
-                } else if (bank.match(/fleeca\d+/).length > 0) {
+                } else if (bank.match(/fleeca\d+/)) {
                     this.blipFactory.create('bank_' + bank, {
                         name: 'Banque',
                         coords: {

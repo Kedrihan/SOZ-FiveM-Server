@@ -40,6 +40,7 @@ import { VoipModule } from './server/voip/voip.module';
 import { WeaponModule } from './server/weapon/weapon.module';
 import { WeatherModule } from './server/weather/weather.module';
 import { ZEventModule } from './server/zevent/zevent.module';
+import { BankModule } from './server/bank/bank.module';
 
 async function bootstrap() {
     setService('MiddlewareFactory', ChainMiddlewareEventServerFactory);
@@ -79,7 +80,8 @@ async function bootstrap() {
         PoliceModule,
         UpwModule,
         TaxiModule,
-        ...PrivateModules
+        BankModule,
+        ...PrivateModules,
     );
 
     await app.stop();

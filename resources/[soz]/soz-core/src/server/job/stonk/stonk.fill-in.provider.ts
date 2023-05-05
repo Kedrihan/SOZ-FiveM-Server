@@ -88,7 +88,7 @@ export class StonkFillInProvider {
                     },
                 );
 
-                const transfer = this.bankAccountRepository.transferMoney(
+                const transfer = await this.bankAccountRepository.transferMoney(
                     StonkConfig.bankAccount.bankRefill,
                     bank.includes('atm') ? bank : `bank_${bank}`,
                     StonkConfig.collection[item].refill_value * fillAmount,
@@ -101,7 +101,7 @@ export class StonkFillInProvider {
                     });
                 }
 
-                const transferSociety = this.bankAccountRepository.transferMoney(
+                const transferSociety = await this.bankAccountRepository.transferMoney(
                     StonkConfig.bankAccount.farm,
                     StonkConfig.bankAccount.safe,
                     StonkConfig.collection[item].society_gain * fillAmount,

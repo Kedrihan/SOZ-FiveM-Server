@@ -82,7 +82,7 @@ export class UpwOrderProvider {
             return;
         }
         const vehiclePrice = Math.ceil(vehicle.price * 0.01);
-        const transferred = this.bankAccountRepository.transferMoney('upw', 'farm_upw', vehiclePrice);
+        const transferred = await this.bankAccountRepository.transferMoney('upw', 'farm_upw', vehiclePrice);
 
         if (isErr(transferred)) {
             this.notifier.notify(

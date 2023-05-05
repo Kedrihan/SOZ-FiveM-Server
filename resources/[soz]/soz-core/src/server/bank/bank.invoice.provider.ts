@@ -276,7 +276,7 @@ export class BankInvoiceProvider {
             delete this.Invoices[account][id];
             TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.source, id);
         } else {
-            const result = this.bankAccountRepository.transferMoney(
+            const result = await this.bankAccountRepository.transferMoney(
                 invoice.targetAccount,
                 invoice.emitterSafe,
                 invoice.amount,

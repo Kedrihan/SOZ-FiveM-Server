@@ -279,7 +279,7 @@ export class BankAccountRepository extends Repository<BankAccount[]> {
         return Err(reason);
     }
 
-    public async accessGranted(acc: any, playerId: string): Promise<boolean> {
+    public async accessGranted(acc: any, playerId: number): Promise<boolean> {
         const account = this.getAccount(acc);
         let owner = account.owner;
         if (owner.startsWith('safe_')) {

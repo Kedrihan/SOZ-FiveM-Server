@@ -95,7 +95,7 @@ export class RebootProvider {
             },
         });
 
-        this.bankAccountRepository.saveAccounts();
+        await this.bankAccountRepository.saveAccounts();
         exports['soz-upw'].saveUpw();
         exports['soz-inventory'].saveInventories();
         exports['soz-inventory'].stopSyncInventories();

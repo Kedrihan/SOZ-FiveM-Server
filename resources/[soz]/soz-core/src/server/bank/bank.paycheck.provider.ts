@@ -1,4 +1,4 @@
-import { Tick, TickInterval } from '@public/core/decorators/tick';
+import { Tick, TickInterval } from '../../core/decorators/tick';
 import { Monitor } from '@public/shared/monitor';
 
 import { Inject } from '../../core/decorators/injectable';
@@ -26,10 +26,10 @@ export class BankPaycheckProvider {
     @Inject(Monitor)
     private monitor: Monitor;
 
-    @Tick(TickInterval.PAYCHECK_INTERVAL)
+    @Tick(TickInterval.PAYCHECK_INTERVAL, 'bank:paycheck')
     public async onTick() {
         const allPlayersSources = this.qbCore.getPlayersSources();
-        const allJobs = this.jobService.getJobs();
+        const allJobs = exports['soz-jobs'].GetCoreObject().Jobs;
         for (const playerSource of allPlayersSources) {
             const player = this.qbCore.getPlayer(playerSource);
             const grade = allJobs[player.PlayerData.job.id].grades[player.PlayerData.job.grade];
@@ -39,7 +39,7 @@ export class BankPaycheckProvider {
                 if (!player.PlayerData.job.onduty) {
                     payment = Math.ceil((payment * 30) / 100);
                 }
-                const result = this.bankAccountRepository.transferMoney(
+                const result = await this.bankAccountRepository.transferMoney(
                     player.PlayerData.job.id,
                     player.PlayerData.charinfo.account,
                     payment,

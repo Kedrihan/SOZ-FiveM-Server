@@ -64,8 +64,8 @@ export class BankAccountManager {
         }
     }
 
-    public accessAllowed(owner: string, player: string, type: string): boolean {
-        const playerObject = this.qbCore.getPlayer(Number.parseInt(player));
+    public accessAllowed(owner: string, player: number, type: string): boolean {
+        const playerObject = this.qbCore.getPlayer(player);
         switch (type) {
             case 'house':
                 return true;
@@ -87,7 +87,7 @@ export class BankAccountManager {
 
     private async savePlayerAccount(id: string, owner: string, amount: number | bigint): Promise<boolean> {
         const player = this.qbCore.getPlayerByCitizenId(owner);
-        await this.prismaService.bank_accounts.update({
+        await this.prismaService.bank_accounts.updateMany({
             where: {
                 accountid: id,
                 citizenid: owner,
@@ -344,7 +344,7 @@ export class BankAccountManager {
     // Get owner type based on businessid,
     //  eg. "bank_pacific1" => "pacific"
     //      "atm_big_123456" => "big"
-    private getTerminalType(businessid: string, atmType: string = null): string {
+    public getTerminalType(businessid: string, atmType: string = null): string {
         if (atmType != null) {
             return atmType;
         }
