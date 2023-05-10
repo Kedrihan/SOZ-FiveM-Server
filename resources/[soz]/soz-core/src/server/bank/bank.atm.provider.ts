@@ -25,7 +25,7 @@ export class BankAtmProvider {
 
     @Rpc(RpcServerEvent.ATM_GET_MONEY)
     public async getAtmMoney(source: number, atmType: string, coords: Vector3): Promise<number> {
-        const [account] = this.getAtmAccount(atmType, coords);
+        const [account] = await this.getAtmAccount(atmType, coords);
         return account.money;
     }
 
@@ -36,7 +36,7 @@ export class BankAtmProvider {
         coords: Vector3,
     ): Promise<AtmMinimalInformation> {
         const coordsHash = this.getAtmHashByCoords(coords);
-        const [account, created] = this.getAtmAccount(atmType, coords);
+        const [account, created] = await this.getAtmAccount(atmType, coords);
         if (created) {
             const allPlayersSources = this.qbCore.getPlayersSources();
             for (const playerSource of allPlayersSources) {
@@ -48,13 +48,13 @@ export class BankAtmProvider {
 
     @Rpc(RpcServerEvent.BANK_GET_ACCOUNT)
     public async getBankAccountCallback(source: number, bank: string): Promise<string> {
-        const [account] = this.getBankAccount(bank);
+        const [account] = await this.getBankAccount(bank);
         return account.id;
     }
 
     @Rpc(RpcServerEvent.BANK_GET_MONEY)
     public async getBankMoneyCallback(source: number, bank: string): Promise<number> {
-        const [account] = this.getBankAccount(bank);
+        const [account] = await this.getBankAccount(bank);
         return account.money;
     }
 
@@ -98,15 +98,15 @@ export class BankAtmProvider {
         amount: number,
         value: number,
     ): Promise<void> {
-        const [account] = this.getAtmAccount(atmType, coords);
+        const [account] = await this.getAtmAccount(atmType, coords);
         this.bankAccountRepository.removeMoney(account, amount * value);
     }
 
-    private getOrCreateAccount(accountName: string, coords: Vector3): [BankAccount, boolean] {
+    private async getOrCreateAccount(accountName: string, coords: Vector3): Promise<[BankAccount, boolean]> {
         let account = this.bankAccountRepository.getAccount(accountName);
         let created = false;
         if (account == null) {
-            account = this.bankAccountRepository.createAccount(
+            account = await this.bankAccountRepository.createAccount(
                 accountName,
                 'bank-atm',
                 'bank-atm',
@@ -156,13 +156,13 @@ export class BankAtmProvider {
     public getBankAccountName(bank: string): string {
         return `bank_${bank}`;
     }
-    private getAtmAccount(atmType: string, coords: Vector3): [BankAccount, boolean] {
+    private async getAtmAccount(atmType: string, coords: Vector3): Promise<[BankAccount, boolean]> {
         const coordsHash = this.getAtmHashByCoords(coords);
         const accountName = this.getAtmAccountName(atmType, coordsHash, coords);
-        return this.getOrCreateAccount(accountName, coords);
+        return await this.getOrCreateAccount(accountName, coords);
     }
-    private getBankAccount(bank: string): [BankAccount, boolean] {
+    private async getBankAccount(bank: string): Promise<[BankAccount, boolean]> {
         const accountName = this.getBankAccountName(bank);
-        return this.getOrCreateAccount(accountName, null);
+        return await this.getOrCreateAccount(accountName, null);
     }
 }

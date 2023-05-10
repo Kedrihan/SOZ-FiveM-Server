@@ -1,11 +1,11 @@
 import { SocietyTaxes } from '@public/config/bank';
 import { Once } from '@public/core/decorators/event';
 import { Monitor } from '@public/shared/monitor';
+import { isOk } from '@public/shared/result';
 
 import { Inject } from '../../core/decorators/injectable';
 import { Provider } from '../../core/decorators/provider';
 import { BankAccountRepository } from '../repository/bank.account.repository';
-import { isOk } from '@public/shared/result';
 
 @Provider()
 export class BankTaxProvider {
@@ -54,12 +54,12 @@ export class BankTaxProvider {
             if (isOk(result)) {
                 this.monitor.log(
                     'INFO',
-                    `Public society ${account} receive ${money}$ tax. Percentage: ${repartition}%`,
+                    `Public society ${account} receive ${money}$ tax. Percentage: ${repartition}%`
                 );
             } else {
                 this.monitor.log(
                     'ERROR',
-                    `Public society ${account} can't receive ${money}$ tax. Percentage: ${repartition}% | Reason: ${result.err}`,
+                    `Public society ${account} can't receive ${money}$ tax. Percentage: ${repartition}% | Reason: ${result.err}`
                 );
             }
         }

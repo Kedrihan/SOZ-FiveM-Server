@@ -177,7 +177,7 @@ export class BankAccountManager {
 
     private async loadBusinessAccount(id: string, owner: string): Promise<[number | bigint, boolean]> {
         let created = false;
-        let result = await this.prismaService.bank_accounts.findFirst({
+        const result = await this.prismaService.bank_accounts.findFirst({
             where: {
                 account_type: 'business',
                 businessid: owner,
@@ -203,7 +203,7 @@ export class BankAccountManager {
 
     private async loadPlayerAccount(id: string, owner: string): Promise<[number | bigint, boolean]> {
         let created = false;
-        let result = await this.prismaService.bank_accounts.findFirst({
+        const result = await this.prismaService.bank_accounts.findFirst({
             where: {
                 account_type: 'player',
                 accountid: id,
@@ -230,7 +230,7 @@ export class BankAccountManager {
     }
     private async loadOffshoreAccount(id: string): Promise<[number | bigint, boolean]> {
         let created = false;
-        let result = await this.prismaService.bank_accounts.findFirst({
+        const result = await this.prismaService.bank_accounts.findFirst({
             where: {
                 account_type: 'offshore',
                 businessid: id,
@@ -256,7 +256,7 @@ export class BankAccountManager {
 
     private async loadSafeAccount(id: string): Promise<[number | bigint, boolean]> {
         let created = false;
-        let result = await this.prismaService.bank_accounts.findFirst({
+        const result = await this.prismaService.bank_accounts.findFirst({
             where: {
                 account_type: 'safestorages',
                 businessid: id,
@@ -281,7 +281,7 @@ export class BankAccountManager {
     }
     private async loadHouseAccount(id: string): Promise<[number | bigint, boolean]> {
         let created = false;
-        let result = await this.prismaService.bank_accounts.findFirst({
+        const result = await this.prismaService.bank_accounts.findFirst({
             where: {
                 account_type: 'safestorages',
                 houseid: id,
@@ -312,7 +312,7 @@ export class BankAccountManager {
         let created = false;
         let defaultMoney = 0;
 
-        let result = await this.prismaService.bank_accounts.findFirst({
+        const result = await this.prismaService.bank_accounts.findFirst({
             where: {
                 account_type: 'bank_atm',
                 businessid: owner,
@@ -323,7 +323,7 @@ export class BankAccountManager {
         });
 
         if (result == null) {
-            let ownerType = this.getTerminalType(owner);
+            const ownerType = this.getTerminalType(owner);
             defaultMoney = this.getDefaultMoney(ownerType) || 0;
             await this.prismaService.bank_accounts.create({
                 data: {

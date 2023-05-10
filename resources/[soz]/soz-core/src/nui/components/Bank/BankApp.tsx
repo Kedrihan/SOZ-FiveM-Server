@@ -1,5 +1,6 @@
 import cn from 'classnames';
 import { FunctionComponent, useState } from 'react';
+import React from 'react';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import { NuiEvent } from '../../../shared/event';
