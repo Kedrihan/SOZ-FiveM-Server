@@ -104,7 +104,7 @@ export class BankProvider {
                 coords: {
                     x: coords[0],
                     y: coords[1],
-                    z: coords[2],
+                    z: coords[2] - 1,
                     w: coords[3],
                 },
                 minusOne: true,

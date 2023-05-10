@@ -21,11 +21,12 @@ import { RadarApp } from './Police/RadarApp';
 import { ProgressApp } from './Progress/ProgressApp';
 import { StateApp } from './StateApp';
 import { TaxiHorodateurApp } from './Taxi/TaxiHorodateurApp';
+import { BankApp } from './Bank/BankApp';
 
 export const App: FunctionComponent = () => {
     const [hide, setHide] = useState(false);
 
-    useNuiEvent('global', 'PauseMenuActive', active => {
+    useNuiEvent('global', 'PauseMenuActive', (active) => {
         setHide(active);
     });
 
@@ -51,6 +52,7 @@ export const App: FunctionComponent = () => {
                 <BreathAnalyzerApp />
                 <HoodApp />
                 <TaxiHorodateurApp />
+                <BankApp />
             </div>
         </Provider>
     );

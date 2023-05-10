@@ -3,7 +3,7 @@ import { Vector4 } from '@public/shared/polyzone/vector';
 import { randomIntFromInterval } from '@public/shared/utils/number';
 
 export const JobSafeMaxMoney = 600000;
-export const PayCheckTimeOut = 1;
+export const PayCheckTimeOut = 20;
 export const OffShoreMaxWashAmount = randomIntFromInterval(50000, 150000);
 export const DefaultAccountMoney: Record<string, number> = {
     player: 5000,

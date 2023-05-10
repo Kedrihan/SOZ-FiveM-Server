@@ -1,9 +1,12 @@
-import '../../styles/bank-style.css';
+import { useNuiFocus, useNuiEvent } from '@public/nui/hook/nui';
+import { BankData } from '@public/shared/nui/bank';
 
-import { FunctionComponent, useEffect } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { FunctionComponent, useEffect, useState } from 'react';
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
+import { fetchNui } from '@public/nui/fetch';
+import { NuiEvent } from '@public/shared/event';
+import { groupDigits } from '@public/shared/utils/number';
 
-/*
 type TabProps = {
     bank: BankData;
 };
@@ -34,7 +37,7 @@ const HomeTab: FunctionComponent<TabProps> = ({ bank }) => {
                 <div className="container-fluid p-2">
                     <div className="row">
                         <div className="col-12 title">
-                            <h3 style={{ fontSize: '35px' }}>Bienvenue, {bank.information.playerName}</h3>
+                            <h3 style={{ fontSize: '35px' }}>Bienvenue, {bank.information.accountinfo}</h3>
                         </div>
                     </div>
                     <div className="row" id="successRow" style={{ display: 'none' }}>
@@ -54,7 +57,7 @@ const HomeTab: FunctionComponent<TabProps> = ({ bank }) => {
                                         style={{ fontWeight: 'bolder', color: '#28a745' }}
                                         id="currentBalance"
                                     >
-                                        {groupDigits(bank.information.bankBalance)}$
+                                        {groupDigits(bank.information.bankbalance)}$
                                     </h5>
                                     <p className="card-text" style={{ color: 'white' }}>
                                         Montant total disponible pour retrait/transfert
@@ -73,7 +76,7 @@ const HomeTab: FunctionComponent<TabProps> = ({ bank }) => {
                                         style={{ fontWeight: 'bolder', color: '#28a745' }}
                                         id="currentCashBalance"
                                     >
-                                        {groupDigits(bank.information.playerMoney)}$
+                                        {groupDigits(bank.information.money)}$
                                     </h5>
                                     <p className="card-text" style={{ color: 'white' }}>
                                         Montant total disponible pour le dépôt
@@ -151,7 +154,7 @@ const HomeTab: FunctionComponent<TabProps> = ({ bank }) => {
             </div>
         </>
     );
-};*/
+};
 /*
 const WithdrawTab: FunctionComponent<TabProps> = ({ bank }) => {
     return (
@@ -248,10 +251,10 @@ const ActionsTab: FunctionComponent<TabProps> = ({ bank }) => {
 };
 */
 export const BankApp: FunctionComponent = () => {
-    /*const [bankData, setBankData] = useState<BankData>(null);
-
+    const [bankData, setBankData] = useState<BankData>(null);
+    console.log(bankData);
     useNuiFocus(bankData !== null, bankData !== null, false);
-    useNuiEvent('bank', 'open', setBankData);
+    useNuiEvent('bank', 'open', (bank: BankData) => setBankData(bank));
     if (!bankData) {
         return null;
     }
@@ -318,7 +321,7 @@ export const BankApp: FunctionComponent = () => {
                                         >
                                             <span>Compte OffShore</span>
                                         </Link>
-                                        {!playerAccountReg.test(bankData.information.accountInfo) && (
+                                        {!playerAccountReg.test(bankData.information.accountinfo) && (
                                             <Link
                                                 style={{
                                                     color: 'white',
@@ -333,7 +336,7 @@ export const BankApp: FunctionComponent = () => {
                                 </div>
                                 <div className="col-12 mt-2">
                                     <div className="col-12">
-                                        {playerAccountReg.test(bankData.information.accountInfo) && (
+                                        {playerAccountReg.test(bankData.information.accountinfo) && (
                                             <div
                                                 id="accountNumberCard"
                                                 className="card mb-3"
@@ -343,7 +346,7 @@ export const BankApp: FunctionComponent = () => {
                                                 <div className="card-body">
                                                     <p className="card-text" style={{ color: 'white' }}>
                                                         <span id="accountNumber">
-                                                            {bankData.information.accountInfo}
+                                                            {bankData.information.accountinfo}
                                                         </span>
                                                     </p>
                                                 </div>
@@ -364,19 +367,8 @@ export const BankApp: FunctionComponent = () => {
                 </div>
             </div>
         </MemoryRouter>
-    );*/
-    useEffect(() => {
-        const script = document.createElement('script');
-
-        script.src = 'https://use.typekit.net/foobar.js';
-        script.async = true;
-
-        document.body.appendChild(script);
-
-        return () => {
-            document.body.removeChild(script);
-        };
-    }, []);
+    );
+    /*
     return (
         <MemoryRouter>
             <div className="container" id="bankingContainer">
@@ -1388,5 +1380,5 @@ export const BankApp: FunctionComponent = () => {
                 </div>
             </div>
         </MemoryRouter>
-    );
+    );*/
 };

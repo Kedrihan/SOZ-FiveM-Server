@@ -1,3 +1,5 @@
+import { BankingInformation } from '../bank';
+
 export interface NuiBankMethodMap {
     open: BankData;
     close: never;
@@ -12,11 +14,4 @@ export type BankData = {
     atmName: string;
     bankAtmAccount: number;
     offshore: any;
-};
-type BankingInformation = {
-    playerName: string;
-    accountInfo: string;
-    bankBalance: number;
-    playerMoney: number;
-    offshore: number;
 };

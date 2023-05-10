@@ -11,7 +11,7 @@ import { BankCurrentService } from './bank.current.service';
 import { NuiDispatch } from '../nui/nui.dispatch';
 import { Result, isErr, isOk } from '@public/shared/result';
 import { BankAtmDefault, ErrorMessage } from '@public/config/bank';
-
+import { BankData } from '@public/shared/nui/bank';
 @Provider()
 export class BankNuiProvider {
     private usedBankAtm;
@@ -63,15 +63,22 @@ export class BankNuiProvider {
         if (bankingInfo) {
             this.playAnimation();
 
-            SetNuiFocus(true, true);
-            SendNUIMessage({
+            this.dispatcher.dispatch('bank', 'open', {
+                information: bankingInfo,
+                isATM,
+                atmType,
+                atmName,
+                bankAtmAccount: Number(bankAtmAccountId),
+                offshore: bankingInfo.offshore,
+            });
+            /*SendNUIMessage({
                 status: 'openbank',
                 information: bankingInfo,
                 isATM,
                 atmType,
                 atmName,
                 bankAtmAccount: bankAtmAccountId,
-            });
+            });*/
         }
     }
     @OnEvent(ClientEvent.BANK_OPEN_SCREEN)
