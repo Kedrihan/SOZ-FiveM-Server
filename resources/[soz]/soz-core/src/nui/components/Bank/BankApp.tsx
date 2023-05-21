@@ -6,6 +6,8 @@ import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { fetchNui } from '@public/nui/fetch';
 import { NuiEvent } from '@public/shared/event';
 import { groupDigits } from '@public/shared/utils/number';
+import { useOutside } from '@public/nui/hook/outside';
+import { useBackspace } from '@public/nui/hook/control';
 
 type TabProps = {
     bank: BankData;
@@ -252,116 +254,123 @@ const ActionsTab: FunctionComponent<TabProps> = ({ bank }) => {
 */
 export const BankApp: FunctionComponent = () => {
     const [bankData, setBankData] = useState<BankData>(null);
-    console.log(bankData);
     useNuiFocus(bankData !== null, bankData !== null, false);
-    useNuiEvent('bank', 'open', (bank: BankData) => setBankData(bank));
+    useNuiEvent('bank', 'open', setBankData);
+    const refOutside = useOutside({
+        click: () => setBankData(null),
+    });
+    useBackspace(() => {
+        setBankData(null);
+    });
     if (!bankData) {
         return null;
     }
 
     return (
         <MemoryRouter>
-            <div className="container">
-                <div className="row">
-                    <div className="col-3">
-                        <div className="container-fluid d-flex flex-column justify-content-around">
-                            <div className="row">
-                                <div className="col-12">
-                                    <img className="img-fluid py-5" src="/public/images/bank/logo.png" />
+            <div className="absolute w-full h-full grid h-screen place-items-center">
+                <div ref={refOutside} className="container">
+                    <div className="row">
+                        <div className="col-3">
+                            <div className="container-fluid d-flex flex-column justify-content-around">
+                                <div className="row">
+                                    <div className="col-12">
+                                        <img className="img-fluid py-5" src="/public/images/bank/logo.png" />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="row">
-                                <div className="col-12">
-                                    <div
-                                        className="nav flex-column nav-pills p-2 shadow-lg"
-                                        style={{ borderRadius: '5px' }}
-                                    >
-                                        <Link
-                                            style={{
-                                                color: 'white',
-                                            }}
-                                            className="nav-link m-1"
-                                            to="/"
+                                <div className="row">
+                                    <div className="col-12">
+                                        <div
+                                            className="nav flex-column nav-pills p-2 shadow-lg"
+                                            style={{ borderRadius: '5px' }}
                                         >
-                                            <span>Accueil</span>
-                                        </Link>
-                                        <Link
-                                            style={{
-                                                color: 'white',
-                                            }}
-                                            className="nav-link m-1"
-                                            to="/withdraw"
-                                        >
-                                            <span>Retrait</span>
-                                        </Link>
-                                        <Link
-                                            style={{
-                                                color: 'white',
-                                            }}
-                                            className="nav-link m-1"
-                                            to="/deposit"
-                                        >
-                                            <span>Dépôt</span>
-                                        </Link>
-                                        <Link
-                                            style={{
-                                                color: 'white',
-                                            }}
-                                            className="nav-link m-1"
-                                            to="/transfer"
-                                        >
-                                            <span>Transfert</span>
-                                        </Link>
-                                        <Link
-                                            style={{
-                                                color: 'white',
-                                            }}
-                                            className="nav-link m-1"
-                                            to="/offshore"
-                                        >
-                                            <span>Compte OffShore</span>
-                                        </Link>
-                                        {!playerAccountReg.test(bankData.information.accountinfo) && (
                                             <Link
                                                 style={{
                                                     color: 'white',
                                                 }}
                                                 className="nav-link m-1"
-                                                to="/actions"
+                                                to="/"
                                             >
-                                                <span>Option du compte</span>
+                                                <span>Accueil</span>
                                             </Link>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="col-12 mt-2">
-                                    <div className="col-12">
-                                        {playerAccountReg.test(bankData.information.accountinfo) && (
-                                            <div
-                                                id="accountNumberCard"
-                                                className="card mb-3"
-                                                style={{ color: 'white' }}
+                                            <Link
+                                                style={{
+                                                    color: 'white',
+                                                }}
+                                                className="nav-link m-1"
+                                                to="/withdraw"
                                             >
-                                                <div className="card-header">Identifiant du compte</div>
-                                                <div className="card-body">
-                                                    <p className="card-text" style={{ color: 'white' }}>
-                                                        <span id="accountNumber">
-                                                            {bankData.information.accountinfo}
-                                                        </span>
-                                                    </p>
+                                                <span>Retrait</span>
+                                            </Link>
+                                            <Link
+                                                style={{
+                                                    color: 'white',
+                                                }}
+                                                className="nav-link m-1"
+                                                to="/deposit"
+                                            >
+                                                <span>Dépôt</span>
+                                            </Link>
+                                            <Link
+                                                style={{
+                                                    color: 'white',
+                                                }}
+                                                className="nav-link m-1"
+                                                to="/transfer"
+                                            >
+                                                <span>Transfert</span>
+                                            </Link>
+                                            <Link
+                                                style={{
+                                                    color: 'white',
+                                                }}
+                                                className="nav-link m-1"
+                                                to="/offshore"
+                                            >
+                                                <span>Compte OffShore</span>
+                                            </Link>
+                                            {!playerAccountReg.test(bankData.information.accountinfo) && (
+                                                <Link
+                                                    style={{
+                                                        color: 'white',
+                                                    }}
+                                                    className="nav-link m-1"
+                                                    to="/actions"
+                                                >
+                                                    <span>Option du compte</span>
+                                                </Link>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="col-12 mt-2">
+                                        <div className="col-12">
+                                            {playerAccountReg.test(bankData.information.accountinfo) && (
+                                                <div
+                                                    id="accountNumberCard"
+                                                    className="card mb-3"
+                                                    style={{ color: 'white' }}
+                                                >
+                                                    <div className="card-header">Identifiant du compte</div>
+                                                    <div className="card-body">
+                                                        <p className="card-text" style={{ color: 'white' }}>
+                                                            <span id="accountNumber">
+                                                                {bankData.information.accountinfo}
+                                                            </span>
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="col-9" style={{ paddingLeft: 0, paddingRight: 0 }}>
-                        <div>
-                            <Routes>
-                                <Route path="/" element={<HomeTab bank={bankData} />} />
-                            </Routes>
+                        <div className="col-9" style={{ paddingLeft: 0, paddingRight: 0 }}>
+                            <div>
+                                <Routes>
+                                    <Route path="/" element={<HomeTab bank={bankData} />} />
+                                </Routes>
+                            </div>
                         </div>
                     </div>
                 </div>

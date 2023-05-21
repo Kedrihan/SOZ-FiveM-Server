@@ -1,21 +1,19 @@
 export const groupDigits = (value: string | number) => {
-    let left = '';
-    let num = '';
-    let right = '';
-    if (typeof value == 'number') {
-        value = value.toString();
+    const numberString = String(value);
+    let result = '';
+    let count = 0;
+
+    for (let i = numberString.length - 1; i >= 0; i--) {
+        result = numberString[i] + result;
+        count++;
+
+        if (count === 3 && i !== 0) {
+            result = ' ' + result;
+            count = 0;
+        }
     }
-    [left, num, right] = value.match(/^([^0-9]*)([0-9]*)(.*)$/);
-    num = num
-        .split('')
-        .reverse()
-        .join('')
-        .replace(/(\d{3})/g, '$1 ')
-        .trim()
-        .split('')
-        .reverse()
-        .join('');
-    return left + num + right;
+
+    return result;
 };
 
 export const randomIntFromInterval = (min: number, max: number) => {

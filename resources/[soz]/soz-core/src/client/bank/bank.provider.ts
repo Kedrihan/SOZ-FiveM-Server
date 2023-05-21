@@ -84,7 +84,6 @@ export class BankProvider {
                         },
                         sprite: 108,
                         color: 28,
-                        scale: 1.0,
                     });
                 } else if (bank.match(/fleeca\d+/)) {
                     this.blipFactory.create('bank_' + bank, {
@@ -151,9 +150,11 @@ export class BankProvider {
                 model,
                 [
                     {
-                        event: ClientEvent.BANK_OPEN_ATM_SCREEN,
                         icon: 'c:bank/compte_personal.png',
                         label: 'Compte Personnel',
+                        action(entity) {
+                            TriggerEvent(ClientEvent.BANK_OPEN_ATM_SCREEN, { atmType: atmType, entity: entity });
+                        },
                     },
                     this.atmRefillAction(atmType, 'small_moneybag'),
                     this.atmRefillAction(atmType, 'medium_moneybag'),
@@ -181,7 +182,7 @@ export class BankProvider {
     @OnEvent(ClientEvent.BANK_ENTER_LOCATION)
     public async onBankEnter(bankType: string, bankName: string) {
         if (BankPedLocations[bankName] != null) {
-            this.bankCurrentService.setCurrentBank({ bank: bankName, type: bankName.match('%a+')[0] });
+            this.bankCurrentService.setCurrentBank({ bank: bankName, type: bankType });
         }
     }
 

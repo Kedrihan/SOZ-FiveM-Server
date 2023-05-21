@@ -1,10 +1,8 @@
-import { JobPermissionService } from '@public/client/job/job.permission.service';
 import { JobService } from '@public/client/job/job.service';
-import { Once, OnceStep, OnEvent } from '@public/core/decorators/event';
+import { OnEvent } from '@public/core/decorators/event';
 import { Exportable } from '@public/core/decorators/exports';
 import { Invoice } from '@public/shared/bank';
 import { ClientEvent, ServerEvent } from '@public/shared/event';
-import { JobPermission } from '@public/shared/job';
 import { Monitor } from '@public/shared/monitor';
 import { PlayerData } from '@public/shared/player';
 import { getDistance, Vector4 } from '@public/shared/polyzone/vector';
@@ -18,13 +16,15 @@ import { Notifier } from '../notifier';
 import { PlayerMoneyService } from '../player/player.money.service';
 import { PlayerService } from '../player/player.service';
 import { BankAccountRepository } from '../repository/bank.account.repository';
+import { BankInvoiceRepository } from '../repository/bank.invoice.repository';
 
 @Provider()
 export class BankInvoiceProvider {
-    private Invoices: Record<string, Record<number, Invoice>> = {};
-
     @Inject(BankAccountRepository)
     private bankAccountRepository: BankAccountRepository;
+
+    @Inject(BankInvoiceRepository)
+    private bankInvoiceRepository: BankInvoiceRepository;
 
     @Inject(Notifier)
     private notifier: Notifier;
@@ -34,9 +34,6 @@ export class BankInvoiceProvider {
 
     @Inject(PlayerService)
     private playerService: PlayerService;
-
-    @Inject(JobPermissionService)
-    private jobPermissionService: JobPermissionService;
 
     @Inject(Monitor)
     private monitor: Monitor;
@@ -50,44 +47,13 @@ export class BankInvoiceProvider {
     @Inject(JobService)
     private jobService: JobService;
 
-    @Once(OnceStep.DatabaseConnected)
-    public async onOnce(): Promise<void> {
-        const invoices = await this.prismaService.invoices.findMany({
-            where: {
-                payed: false,
-                refused: false,
-            },
-        });
-
-        for (const invoice of invoices) {
-            if (invoice.targetAccount === null) {
-                continue;
-            }
-
-            this.Invoices[invoice.targetAccount] = this.Invoices[invoice.targetAccount] || {};
-            this.Invoices[invoice.targetAccount][invoice.id] = {
-                id: invoice.id,
-                label: invoice.label,
-                amount: invoice.amount,
-                createdAt: invoice.created_at.getTime(),
-                payed: invoice.payed,
-                refused: invoice.refused,
-                citizenid: invoice.citizenid,
-                targetAccount: invoice.targetAccount,
-                emitter: invoice.emitter,
-                emitterName: invoice.emitterName,
-                emitterSafe: invoice.emitterSafe,
-            };
-        }
-    }
-
     @OnEvent(ServerEvent.BANK_SEND_INVOICE)
     public async onSendInvoice(
         source: number,
         targetSource: number,
         label: string,
         amount: number,
-        kind: string
+        kind: string,
     ): Promise<void> {
         const player = this.playerService.getPlayer(source);
         const target = this.playerService.getPlayer(targetSource);
@@ -111,7 +77,7 @@ export class BankInvoiceProvider {
         targetSource: number,
         label: string,
         amount: number,
-        kind: string
+        kind: string,
     ): Promise<void> {
         const player = this.playerService.getPlayer(source);
         const target = this.playerService.getPlayer(targetSource);
@@ -134,7 +100,7 @@ export class BankInvoiceProvider {
         if (player === null) {
             return;
         }
-        for (const [account, invoices] of Object.entries(this.Invoices)) {
+        for (const [account, invoices] of Object.entries(this.bankInvoiceRepository.getAllInvoices())) {
             for (const [id, _] of Object.entries(invoices)) {
                 if (Number(id) === invoiceId) {
                     await this.payInvoice(player, account, invoiceId, marked);
@@ -150,7 +116,7 @@ export class BankInvoiceProvider {
         if (player === null) {
             return;
         }
-        for (const [account, invoices] of Object.entries(this.Invoices)) {
+        for (const [account, invoices] of Object.entries(this.bankInvoiceRepository.getAllInvoices())) {
             for (const [id, _] of Object.entries(invoices)) {
                 if (Number(id) === invoiceId) {
                     this.rejectInvoice(player, account, invoiceId);
@@ -162,13 +128,13 @@ export class BankInvoiceProvider {
     }
 
     @Exportable('GetAllPlayerInvoices')
-    public async onGetAllPlayerInvoices(source: number): Promise<Record<number, Invoice>> {
+    public onGetAllPlayerInvoices(source: number): Record<number, Invoice> | null {
         const player = this.playerService.getPlayer(source);
         if (player === null) {
             return null;
         }
-        for (const [account, invoices] of Object.entries(this.Invoices)) {
-            if (this.playerHaveAccessToInvoices(player, account)) {
+        for (const [account, invoices] of Object.entries(this.bankInvoiceRepository.getAllInvoices())) {
+            if (this.bankInvoiceRepository.playerHaveAccessToInvoices(player, account)) {
                 return invoices;
             }
         }
@@ -176,15 +142,10 @@ export class BankInvoiceProvider {
     }
 
     private async payInvoice(player: PlayerData, account: string, id: number, marked: number): Promise<void> {
-        if (
-            !this.playerHaveAccessToInvoices(player, account) ||
-            !this.Invoices[account] ||
-            !this.Invoices[account][id]
-        ) {
+        const invoice = this.bankInvoiceRepository.getInvoice(account, id);
+        if (!this.bankInvoiceRepository.playerHaveAccessToInvoices(player, account) || !invoice) {
             return;
         }
-
-        const invoice = this.Invoices[account][id];
         const emitter = this.playerService.getPlayerByCitizenId(invoice.emitter);
         if (player.charinfo.account === account) {
             if (marked !== null) {
@@ -206,7 +167,7 @@ export class BankInvoiceProvider {
                         this.notifier.notify(
                             player.source,
                             "Le coffre de destination n'a pas de place pour cette somme",
-                            'error'
+                            'error',
                         );
                         this.playerMoneyService.add(player.source, moneyTake, 'money');
                         this.playerMoneyService.add(player.source, markedMoneyTake, 'marked_money');
@@ -218,7 +179,7 @@ export class BankInvoiceProvider {
                         this.notifier.notify(
                             player.source,
                             "Le coffre de destination n'a pas de place pour cette somme",
-                            'error'
+                            'error',
                         );
                         this.playerMoneyService.add(player.source, moneyTake, 'money');
                         this.playerMoneyService.add(player.source, markedMoneyTake, 'marked_money');
@@ -235,7 +196,7 @@ export class BankInvoiceProvider {
                     this.notifier.notify(
                         player.source,
                         "Le coffre de destination n'a pas de place pour cette somme",
-                        'error'
+                        'error',
                     );
                     this.playerMoneyService.add(player.source, invoice.amount, 'money');
                     return;
@@ -269,15 +230,15 @@ export class BankInvoiceProvider {
                     amount: invoice.amount,
                     target_account: invoice.emitterSafe,
                     source_account: invoice.targetAccount,
-                }
+                },
             );
-            delete this.Invoices[account][id];
+            this.bankInvoiceRepository.deleteInvoice(account, id);
             TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.source, id);
         } else {
             const result = await this.bankAccountRepository.transferMoney(
                 invoice.targetAccount,
                 invoice.emitterSafe,
-                invoice.amount
+                invoice.amount,
             );
             if (isOk(result)) {
                 this.prismaService.invoices.update({
@@ -293,7 +254,7 @@ export class BankInvoiceProvider {
                     this.notifier.notify(
                         emitter.source,
                         `Votre facture ~b~${invoice.label}~s~ a été ~g~payée`,
-                        'success'
+                        'success',
                     );
                 }
                 this.monitor.publish(
@@ -309,9 +270,9 @@ export class BankInvoiceProvider {
                         amount: invoice.amount,
                         target_account: invoice.emitterSafe,
                         source_account: invoice.targetAccount,
-                    }
+                    },
                 );
-                delete this.Invoices[account][id];
+                this.bankInvoiceRepository.deleteInvoice(account, id);
                 TriggerClientEvent(ClientEvent.BANK_INVOICE_PAID, player.source, id);
             } else {
                 this.notifier.notify(player.source, '~r~Echec~s~ du paiement la facture de la société', 'error', 10000);
@@ -319,15 +280,10 @@ export class BankInvoiceProvider {
         }
     }
     private rejectInvoice(player: PlayerData, account: string, id: number): void {
-        if (
-            !this.playerHaveAccessToInvoices(player, account) ||
-            !this.Invoices[account] ||
-            !this.Invoices[account][id]
-        ) {
+        const invoice = this.bankInvoiceRepository.getInvoice(account, id);
+        if (!this.bankInvoiceRepository.playerHaveAccessToInvoices(player, account) || !invoice) {
             return;
         }
-
-        const invoice = this.Invoices[account][id];
         const target = this.playerService.getPlayerByCitizenId(invoice.citizenid);
         const emitter = this.playerService.getPlayerByCitizenId(invoice.emitter);
         if (player.charinfo.account === account) {
@@ -349,7 +305,7 @@ export class BankInvoiceProvider {
                     target_account: invoice.emitterSafe,
                     source_account: invoice.targetAccount,
                     title: invoice.label,
-                }
+                },
             );
         } else {
             this.notifier.notify(target.source, 'Vous avez refusé la facture de la société', 'error');
@@ -370,7 +326,7 @@ export class BankInvoiceProvider {
                     target_account: invoice.emitterSafe,
                     source_account: invoice.targetAccount,
                     title: invoice.label,
-                }
+                },
             );
         }
         this.prismaService.invoices.update({
@@ -381,26 +337,21 @@ export class BankInvoiceProvider {
                 refused: true,
             },
         });
-        delete this.Invoices[account][id];
+        this.bankInvoiceRepository.deleteInvoice(account, id);
         TriggerClientEvent(ClientEvent.BANK_INVOICE_REJECTED, source, id);
     }
-    private playerHaveAccessToInvoices(player: PlayerData, account: string): boolean {
-        if (player.charinfo.account === account) {
-            return true;
-        }
-        return this.jobPermissionService.hasPermission(player.job.id, JobPermission.SocietyBankInvoices);
-    }
+
     private async createInvoice(
         emitter: PlayerData,
         target: PlayerData,
         targetAccount: string,
         label: string,
         amount: number,
-        kind: string
+        kind: string,
     ): Promise<boolean> {
         const dist = getDistance(
             GetEntityCoords(GetPlayerPed(emitter.source)) as Vector4,
-            GetEntityCoords(GetPlayerPed(target.source)) as Vector4
+            GetEntityCoords(GetPlayerPed(target.source)) as Vector4,
         );
         if (dist > 5) {
             this.notifier.notify(emitter.source, "Personne n'est à portée de vous", 'error');
@@ -422,29 +373,14 @@ export class BankInvoiceProvider {
             })
         ).id;
         if (id) {
-            if (!this.Invoices[targetAccount]) {
-                this.Invoices[targetAccount] = {};
-            }
-            this.Invoices[targetAccount][id] = {
-                id: id,
-                citizenid: target.citizenid,
-                emitter: emitter.citizenid,
-                emitterName: allJobs[emitter.job.id].label,
-                emitterSafe: `safe_${emitter.job.id}`,
-                targetAccount: targetAccount,
-                label: label,
-                amount: amount,
-                createdAt: new Date().getTime(),
-                payed: false,
-                refused: false,
-            };
+            this.bankInvoiceRepository.createInvoice(id, targetAccount, emitter, target, allJobs, label, amount);
             TriggerClientEvent(
                 ClientEvent.BANK_INVOICE_RECEIVED,
                 target.source,
                 id,
                 label,
                 amount,
-                allJobs[emitter.job.id].label
+                allJobs[emitter.job.id].label,
             );
             let invoiceJob = '';
             if (targetAccount !== target.charinfo.account) {
@@ -464,7 +400,7 @@ export class BankInvoiceProvider {
                     id: id,
                     amount: amount,
                     target_account: targetAccount,
-                }
+                },
             );
             return true;
         }

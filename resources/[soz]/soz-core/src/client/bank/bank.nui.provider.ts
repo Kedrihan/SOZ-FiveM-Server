@@ -62,7 +62,6 @@ export class BankNuiProvider {
         const bankingInfo = await emitRpc<BankingInformation>(RpcServerEvent.BANK_GET_BANKING_INFORMATIONS, account);
         if (bankingInfo) {
             this.playAnimation();
-
             this.dispatcher.dispatch('bank', 'open', {
                 information: bankingInfo,
                 isATM,

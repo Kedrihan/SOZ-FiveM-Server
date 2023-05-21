@@ -195,7 +195,7 @@ export class BankProvider {
     }
 
     @Exportable('GetPlayerAccount')
-    public async getPlayerAccount(source: number): Promise<any> {
+    public getPlayerAccount(source: number): any {
         const player = this.playerService.getPlayer(source);
         const account = this.bankAccountRepository.getAccount(player.charinfo.account);
         return { name: player.name, account: account.id, balance: account.money };
