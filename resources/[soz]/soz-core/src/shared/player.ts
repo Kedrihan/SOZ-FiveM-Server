@@ -267,4 +267,5 @@ export type PlayerMetadata = PlayerHealthBook & {
     hazmat: boolean;
     mood?: string | null;
     rp_death: boolean;
+    isPlayingPool: boolean;
 };
