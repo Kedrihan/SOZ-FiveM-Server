@@ -52,6 +52,7 @@ import { setService, setServiceInstance, unloadContainer } from './core/containe
 import { ProviderClientLoader } from './core/loader/provider.client.loader';
 import { ChainMiddlewareEventClientFactory } from './core/middleware/middleware.event.client';
 import { ChainMiddlewareTickClientFactory } from './core/middleware/middleware.tick.client';
+import { PoolGameModule } from './client/pool-game/pg.module';
 
 async function bootstrap() {
     setServiceInstance('Store', store);
@@ -79,6 +80,7 @@ async function bootstrap() {
         StreamModule,
         ZEventModule,
         AdminModule,
+        PoolGameModule,
         BennysModule,
         StonkModule,
         BankModule,

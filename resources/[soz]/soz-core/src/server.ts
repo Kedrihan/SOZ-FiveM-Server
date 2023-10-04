@@ -44,7 +44,8 @@ import { VehicleModule } from './server/vehicle/vehicle.module';
 import { VoipModule } from './server/voip/voip.module';
 import { WeaponModule } from './server/weapon/weapon.module';
 import { WeatherModule } from './server/weather/weather.module';
-import { ZEventModule } from './server/zevent/zevent.module';
+import { ZEventModule } from './server/zevent/zevent.module'; 
+//import { PoolModule } from './server/pool-game/pg.module';
 
 async function bootstrap() {
     setServiceInstance('Store', store);
