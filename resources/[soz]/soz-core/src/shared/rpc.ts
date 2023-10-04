@@ -143,6 +143,9 @@ export enum RpcServerEvent {
     PROP_REQUEST_CREATE_PROP = 'soz-core:server:prop:create-prop',
     PROP_REQUEST_TOGGLE_LOAD_COLLECTION = 'soz-core:server:prop:load-collection',
     PROP_REQUEST_UNLOAD_PROPS = 'soz-core:server:prop:unload-props',
+
+    POOL_GET_GAME_IN_PROGRESS = 'soz-core:server:pool-game:get-game-in-progress',
+    POOL_GET_ALL_GAMES = 'soz-core:server:pool-game:get-all-games',
 }
 
 export enum RpcClientEvent {

@@ -152,6 +152,10 @@ export enum ServerEvent {
 
     AFK_KICK = 'soz-core:server:afk:kick',
 
+    POOL_INIT_GAME = 'soz-core:server:pool-game:init',
+    POOL_SET_SOMEONE_PLAYING = 'soz-core:server:pool-game:set-someone-playing',
+    POOL_STOP_GAME = 'soz-core:server:pool-game:stop',
+    POOL_SHOOT = 'soz-core:server:pool-game:shoot',
     // not core
 
     BANKING_TRANSFER_MONEY = 'banking:server:TransferMoney',
@@ -417,6 +421,10 @@ export enum ClientEvent {
 
     SHOP_OPEN_MENU = 'soz-core:client:shops:open-menu',
     SHOP_UPDATE_STOCKS = 'soz-core:client:shops:update-stocks',
+
+    POOL_NEW_GAME = 'soz-core:server:pool-game:new',
+    POOL_DELETE_GAME = 'soz-core:server:pool-game:delete',
+    POOL_UPDATE_GAME = 'soz-core:server:pool-game:update',
 
     // Temp event which should be internally used by a service when only soz core
     CHARACTER_SET_TEMPORARY_CLOTH = 'soz-character:Client:ApplyTemporaryClothSet',

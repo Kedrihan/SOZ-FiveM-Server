@@ -1,40 +1,25 @@
-import { Once, OnceStep } from '@public/core/decorators/event';
+import { On, Once, OnceStep } from '@public/core/decorators/event';
 import { Inject } from '@public/core/decorators/injectable';
+import { Tick, TickInterval } from '@public/core/decorators/tick';
 import { emitRpc } from '@public/core/rpc';
 import { wait } from '@public/core/utils';
-import { computeBinId } from '@public/shared/job/garbage';
-import { Ball } from '@public/shared/pool-game';
+import { ClientEvent, ServerEvent } from '@public/shared/event';
+import { WorldObject } from '@public/shared/object';
+import { getDistance, Vector3, Vector4 } from '@public/shared/polyzone/vector';
+import { DISTANCE_PROPS_LOADING, Game } from '@public/shared/pool-game';
 import { RpcServerEvent } from '@public/shared/rpc';
 
 import { Provider } from '../../core/decorators/provider';
-import { AnimationStopReason } from '../../shared/animation';
 import { AnimationService } from '../animation/animation.service';
+import { CameraService } from '../camera';
 import { PlayerService } from '../player/player.service';
+import { ResourceLoader } from '../repository/resource.loader';
 import { TargetFactory } from '../target/target.factory';
 
 const racks = [GetHashKey('prop_pool_rack_01'), GetHashKey('prop_pool_rack_02')];
 const tables = [GetHashKey('prop_pooltable_02'), GetHashKey('prop_pooltable_3b')];
-const cue = GetHashKey('prop_pool_cue');
-const ballsProps = [
-    GetHashKey('prop_poolball_cue'),
-    GetHashKey('prop_poolball_1'),
-    GetHashKey('prop_poolball_2'),
-    GetHashKey('prop_poolball_3'),
-    GetHashKey('prop_poolball_4'),
-    GetHashKey('prop_poolball_5'),
-    GetHashKey('prop_poolball_6'),
-    GetHashKey('prop_poolball_7'),
-    GetHashKey('prop_poolball_8'),
-    GetHashKey('prop_poolball_9'),
-    GetHashKey('prop_poolball_10'),
-    GetHashKey('prop_poolball_11'),
-    GetHashKey('prop_poolball_12'),
-    GetHashKey('prop_poolball_13'),
-    GetHashKey('prop_poolball_14'),
-    GetHashKey('prop_poolball_15'),
-];
-const balls: Ball[] = [];
-const props = [];
+
+let cueProp = null;
 @Provider()
 export class PoolGameProvider {
     @Inject(TargetFactory)
@@ -46,6 +31,13 @@ export class PoolGameProvider {
     @Inject(PlayerService)
     public playerService: PlayerService;
 
+    @Inject(CameraService)
+    private cameraService: CameraService;
+
+    @Inject(ResourceLoader)
+    private resourceLoader: ResourceLoader;
+
+    private allGames: Game[] = [];
     @Once(OnceStep.Start)
     public init() {
         this.targetFactory.createForModel(
@@ -60,6 +52,32 @@ export class PoolGameProvider {
                         const player = this.playerService.getPlayer();
                         player.metadata.isPlayingPool = true;
                         //attacher une queue au ped + mettre le metadata qui dit qu'il a la queue (utile pour pouvoir interagir avec la table de billard après)
+
+                        // Coordonnées de la main du joueur (vous pouvez ajuster ces valeurs)
+                        const handCoords = [0.12, -0.1, -0.01];
+                        const ped = PlayerPedId();
+                        // Créez le prop de queue de billard
+                        cueProp = CreateObject(GetHashKey('prop_pool_cue'), 0, 0, 0, true, true, true);
+
+                        // Attachez le prop à la main du joueur
+                        SetEntityAsMissionEntity(cueProp, true, true);
+                        AttachEntityToEntity(
+                            cueProp,
+                            ped,
+                            GetPedBoneIndex(ped, 28422),
+                            handCoords[0],
+                            handCoords[1],
+                            handCoords[2],
+                            0.0,
+                            0.0,
+                            0.0,
+                            true,
+                            true,
+                            false,
+                            true,
+                            1,
+                            true,
+                        );
                     },
                     canInteract: () => {
                         const player = this.playerService.getPlayer();
@@ -83,6 +101,9 @@ export class PoolGameProvider {
                         await wait(800);
                         const player = this.playerService.getPlayer();
                         player.metadata.isPlayingPool = false;
+                        if (cueProp != null && DoesEntityExist(cueProp)) {
+                            DeleteEntity(cueProp);
+                        }
                     },
                     canInteract: () => {
                         const player = this.playerService.getPlayer();
@@ -99,7 +120,7 @@ export class PoolGameProvider {
                     },
                 },
             ],
-            1.3
+            1.3,
         );
 
         this.targetFactory.createForModel(
@@ -111,10 +132,13 @@ export class PoolGameProvider {
                     action: async (entity: number) => {
                         TaskTurnPedToFaceEntity(PlayerPedId(), entity, 800);
                         await wait(800);
-                        //Placement initial des boules sur la table (entity) + synchro avec tous les joueurs
+                        const tableCoords = GetEntityCoords(entity) as Vector3;
+                        //On démarre une nouvelle partie
+                        TriggerServerEvent(ServerEvent.POOL_INIT_GAME, tableCoords);
                     },
-                    canInteract: () => {
+                    canInteract: async (entity: number) => {
                         const player = this.playerService.getPlayer();
+                        const tableCoords = GetEntityCoords(entity) as Vector3;
 
                         if (!player) {
                             return false;
@@ -124,6 +148,69 @@ export class PoolGameProvider {
                             return false;
                         }
 
+                        //On ne peut pas replacer les boules si une partie est déjà en cours
+                        const currentGame = await this.getGameInProgress(tableCoords);
+                        if (currentGame) {
+                            return false;
+                        }
+                        return true;
+                    },
+                },
+                {
+                    label: 'Ranger les boules',
+                    icon: 'c:inventory/ouvrir_la_poubelle.png',
+                    action: async (entity: number) => {
+                        const tableCoords = GetEntityCoords(entity) as Vector3;
+                        TriggerServerEvent(ServerEvent.POOL_STOP_GAME, tableCoords);
+                    },
+                    canInteract: async (entity: number) => {
+                        const player = this.playerService.getPlayer();
+                        const tableCoords = GetEntityCoords(entity) as Vector3;
+
+                        if (!player) {
+                            return false;
+                        }
+
+                        if (!player.metadata.isPlayingPool) {
+                            return false;
+                        }
+
+                        //On ne peut pas ranger les boules si pas de partie en cours ou partie pas prête côté serveur ou si quelqu'un va tirer
+                        const currentGame = await this.getGameInProgress(tableCoords);
+                        if (!currentGame || !currentGame.ready || currentGame.playerSource) {
+                            return false;
+                        }
+                        return true;
+                    },
+                },
+                {
+                    label: 'Tirer',
+                    icon: 'c:inventory/ouvrir_la_poubelle.png',
+                    action: async (entity: number) => {
+                        const tableCoords = GetEntityCoords(entity) as Vector3;
+                        TriggerServerEvent(ServerEvent.POOL_SET_SOMEONE_PLAYING, tableCoords);
+                        //Placer la camera comme il faut au niveau du joueur, queue en avant qui pointe vers la balle blanche
+                        //Gérer la souris qui fait bouger la queue de gauche a droite
+                        //Gérer l'appuie d'une touche pour récup la puissance du coup
+                        //Transmettre la puissance du coup et l'angle de tir au serveur pour qu'il calcul et mette a jour les coordonénes des boules
+                    },
+                    canInteract: async (entity: number) => {
+                        const player = this.playerService.getPlayer();
+                        const tableCoords = GetEntityCoords(entity) as Vector3;
+
+                        if (!player) {
+                            return false;
+                        }
+
+                        if (!player.metadata.isPlayingPool) {
+                            return false;
+                        }
+
+                        //On ne peut pas tirer si pas de partie en cours ou partie pas prête côté serveur ou si quelqu'un va tirer
+                        const currentGame = await this.getGameInProgress(tableCoords);
+                        if (!currentGame || !currentGame.ready || currentGame.playerSource) {
+                            return false;
+                        }
                         return true;
                     },
                 },
@@ -137,186 +224,135 @@ export class PoolGameProvider {
                     },
                 },
             ],
-            1.3
+            1.3,
         );
     }
+    @Once(OnceStep.PlayerLoaded)
+    public async loadGames() {
+        this.allGames = await this.getAllGames();
+    }
 
-    private createBallProp(ball: Ball) {
-        const prop = CreateObject(
-            GetHashKey(ball.propName),
-            ball.coords[0],
-            ball.coords[1],
-            ball.coords[2],
+    @Tick(TickInterval.EVERY_FRAME)
+    public async onTick() {
+        const player = PlayerPedId();
+        const playerCoords = GetEntityCoords(player) as Vector3;
+        for (const game of this.allGames) {
+            const playerDistance = getDistance(game.coords, playerCoords);
+            if (playerDistance < DISTANCE_PROPS_LOADING) {
+                //On charge les props (la position se mettra à jour direct en actualisant bien this.allGames à chaque coup)
+                for (const ball of game.balls.filter((b) => !b.pocketed)) {
+                    if (ball.prop == null) {
+                        const entity = await this.spawnProp(ball.propHash, ball.coords);
+                        ball.prop = entity;
+                    } else {
+                        if (getDistance(ball.coords, GetEntityCoords(ball.prop) as Vector3) != 0) {
+                            await this.moveProp(ball.prop, ball.coords);
+                        }
+                    }
+                }
+            } else {
+                //On delete les props s'ils existent
+                for (const ball of game.balls.filter((b) => !b.pocketed && b.prop != null)) {
+                    await this.deleteProp(ball.prop);
+                }
+            }
+        }
+    }
+
+    @On(ClientEvent.POOL_NEW_GAME)
+    public async newGame(newGame: Game) {
+        this.allGames.push(newGame);
+    }
+    @On(ClientEvent.POOL_DELETE_GAME)
+    public async deleteGame(gameId: string) {
+        this.allGames = this.allGames.filter((g) => g.id !== gameId);
+    }
+    @On(ClientEvent.POOL_UPDATE_GAME)
+    public async updateGame(game: Game) {
+        const gameToUpdate = this.allGames.find((g) => g.id === game.id);
+        gameToUpdate.balls = game.balls;
+        gameToUpdate.ready = game.ready;
+        gameToUpdate.playerSource = game.playerSource;
+    }
+    private async getGameInProgress(tableCoords: Vector3): Promise<Game> {
+        return await emitRpc<Game>(RpcServerEvent.POOL_GET_GAME_IN_PROGRESS, tableCoords);
+    }
+    private async getAllGames(): Promise<Game[]> {
+        return await emitRpc<Game[]>(RpcServerEvent.POOL_GET_ALL_GAMES);
+    }
+    private manageShot(currentGame: Game): void {
+        const playerPed = PlayerPedId();
+        const cueBall = currentGame.balls.find((b) => b.propHash === GetHashKey('prop_poolball_cue'));
+        const cueBallCoords = GetEntityCoords(cueBall.propHash) as Vector3;
+
+        const yaw = 0.0; // Ajustez les angles de caméra selon vos besoins
+
+        SetEntityCoordsNoOffset(playerPed, cueBallCoords[0], cueBallCoords[1], cueBallCoords[2], true, true, true);
+        SetEntityHeading(playerPed, yaw);
+
+        const fov = 60.0; // Ajustez le champ de vision (FOV) selon vos besoins
+        SetCamFov(GetRenderingCam(), fov); // Utilisez GetRenderingCam() pour la caméra de rendu active
+
+        const poolCueSpeed = 0.5; // Ajustez la vitesse du mouvement de la queue de billard
+        // Créez le prop de la queue de billard
+        const poolCue = CreateObject(
+            GetHashKey('prop_pool_cue'),
+            cueBallCoords[0],
+            cueBallCoords[1],
+            cueBallCoords[2],
             true,
             true,
-            true
+            true,
         );
-        SetEntityCollision(prop, false, false);
-        SetEntityNoCollisionEntity(prop, PlayerPedId(), true);
-        props.push(prop);
+        AttachEntityToEntity(poolCue, cueBall.propHash, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, 0, true);
+        RenderScriptCams(false, true, 0, true, true);
+        const tableCoordsOffset = [
+            currentGame.coords[0],
+            currentGame.coords[1] - 5.0,
+            currentGame.coords[2] + 2.0,
+        ] as Vector3;
+
+        //let isCameraActive = true;
+        //while (isCameraActive) {
+        Wait(0);
+        DisableAllControlActions(0);
+
+        // Gérez le déplacement de la queue de billard avec la souris ici
+        // Utilisez les coordonnées de la souris pour ajuster la position de la queue de billard
+
+        // Par exemple :
+        const mouseX = GetControlNormal(0, 1);
+        const mouseY = GetControlNormal(0, 2);
+        const poolCueCoords = GetEntityCoords(poolCue) as Vector3;
+
+        poolCueCoords[0] += mouseX * poolCueSpeed;
+        poolCueCoords[1] += mouseY * poolCueSpeed;
+
+        SetEntityCoordsNoOffset(poolCue, poolCueCoords[0], poolCueCoords[1], poolCueCoords[2], true, true, true);
+        // Mettez à jour la caméra si nécessaire
+        this.cameraService.setupCamera(tableCoordsOffset, cueBallCoords);
+        //Après le tir on remet isCameraActive a FALSE, fausse condition pour le moment
+        /*if (isCameraActive && !poolCue) {
+                isCameraActive = false;
+            }*/
+        //}
     }
-    private placeBallsInTriangle() {
-        const triangleSide = 10.0; // Longueur du côté du triangle
-        let yOffset = 0.0; // Décalage vertical des boules
-
-        // Boule 1
-        const ball1: Ball = {
-            coords: [0.0, 0.0 + yOffset, 0.0],
-            velocityX: 0.0,
-            velocityY: 0.0,
-            id: 1,
-            propName: '',
-        };
-        balls.push(ball1);
-        this.createBallProp(ball1);
-
-        // Boules 2 à 10
-        let ballId = 2;
-        for (let i = 1; i <= 4; i++) {
-            let xOffset = -triangleSide / 2 + i * (triangleSide / 2);
-            for (let j = 1; j <= i; j++) {
-                const ball: Ball = {
-                    coords: [xOffset, -triangleSide + yOffset, 0.0],
-                    velocityX: 0.0,
-                    velocityY: 0.0,
-                    id: ballId,
-                    propName: '',
-                };
-                balls.push(ball);
-                this.createBallProp(ball);
-                ballId++;
-                xOffset = xOffset + triangleSide;
-            }
-            yOffset = yOffset - 1.0;
+    private async spawnProp(model: number, coords: Vector3): Promise<number> {
+        if (IsModelValid(model)) {
+            await this.resourceLoader.loadModel(model);
+        }
+        const entity = CreateObjectNoOffset(model, coords[0], coords[1], coords[2], false, false, false);
+        this.resourceLoader.unloadModel(model);
+        return entity;
+    }
+    private async moveProp(entity: number, coords: Vector3): Promise<void> {
+        if (DoesEntityExist(entity)) {
+            SetEntityCoordsNoOffset(entity, coords[0], coords[1], coords[2], true, true, true);
         }
     }
-    /* 
-
-
-    -- Fonction pour placer les boules en triangle
-local function placeBallsInTriangle()
-    local triangleSide = 10.0 -- Longueur du côté du triangle
-    local yOffset = 0.0 -- Décalage vertical des boules
-    
-    -- Boule 1
-    local ball1 = {
-        x = 0.0,
-        y = 0.0 + yOffset,
-        z = 0.0,
-        velocityX = 0.0,
-        velocityY = 0.0,
-        id = 1
-    }
-    table.insert(balls, ball1)
-    createBallProp(ball1)
-    
-    -- Boules 2 à 10
-    local ballId = 2
-    for i = 1, 4 do
-        local xOffset = -triangleSide / 2 + i * (triangleSide / 2)
-        for j = 1, i do
-            local ball = {
-                x = xOffset,
-                y = -triangleSide + yOffset,
-                z = 0.0,
-                velocityX = 0.0,
-                velocityY = 0.0,
-                id = ballId
-            }
-            table.insert(balls, ball)
-            createBallProp(ball)
-            ballId = ballId + 1
-            xOffset = xOffset + triangleSide
-        end
-        yOffset = yOffset - 1.0
-    end
-end
-    
-
-
-
-
-Collision et tout
-
-local balls = {} -- Tableau pour stocker les informations sur les boules
-local props = {} -- Tableau pour stocker les props correspondants aux boules
-
--- Fonction pour créer un prop correspondant à une boule
-local function createBallProp(ball)
-    local prop = CreateObject(GetHashKey("prop_pooltable_ball"), ball.x, ball.y, ball.z, true, true, true)
-    SetEntityCollision(prop, false, false)
-    SetEntityNoCollisionEntity(prop, GetPlayerPed(-1), true)
-    table.insert(props, prop)
-end
-
--- Fonction pour mettre à jour la position des props des boules
-local function updateBallProps()
-    for i, ball in ipairs(balls) do
-        local prop = props[i]
-        if DoesEntityExist(prop) then
-            SetEntityCoordsNoOffset(prop, ball.x, ball.y, ball.z, true, true, true)
-        end
-    end
-end
-
--- Mettre à jour la position des boules
-Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(0)
-        for i, ball in pairs(balls) do
-            -- Appliquer la friction (résistance au roulement)
-            ball.velocityX = ball.velocityX * 0.98
-            ball.velocityY = ball.velocityY * 0.98
-            
-            -- Mettre à jour la position de la boule
-            ball.x = ball.x + ball.velocityX
-            ball.y = ball.y + ball.velocityY
-            
-            -- Gestion des collisions avec les bords de la table (simplifié)
-            if ball.x < -100 then
-                ball.velocityX = -ball.velocityX
-                ball.x = -100
-            elseif ball.x > 100 then
-                ball.velocityX = -ball.velocityX
-                ball.x = 100
-            end
-            
-            if ball.y < -50 then
-                ball.velocityY = -ball.velocityY
-                ball.y = -50
-            elseif ball.y > 50 then
-                ball.velocityY = -ball.velocityY
-                ball.y = 50
-            end
-
-            -- Vérifier les collisions avec les autres boules
-            for j, otherBall in pairs(balls) do
-                if i ~= j then
-                    checkCollision(ball, otherBall)
-                end
-            end
-        end
-
-        -- Mettre à jour la position des props correspondants aux boules
-        updateBallProps()
-    end
-end)
-
--- Événement pour créer les boules de billard et leurs props correspondants
-RegisterNetEvent("billard:createBalls")
-AddEventHandler("billard:createBalls", function()
-    for i = 1, 15 do
-        local ball = {
-            x = 0, -- Position initiale
-            y = 0,
-            z = 0,
-            velocityX = 0, -- Vitesse initiale
-            velocityY = 0,
-            id = i
+    private async deleteProp(entity: number): Promise<void> {
+        if (DoesEntityExist(entity)) {
+            DeleteEntity(entity);
         }
-        table.insert(balls, ball)
-        createBallProp(ball) -- Créer le prop correspondant
-    end
-end)
-    */
+    }
 }
