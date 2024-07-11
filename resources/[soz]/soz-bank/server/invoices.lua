@@ -99,10 +99,10 @@ local function PayInvoice(PlayerData, account, id, marked)
         MySQL.update.await("UPDATE invoices SET payed = true WHERE id = ? AND payed = false AND refused = false", {
             invoice.id,
         })
-        local kindLabel = 'facture'
+        local kindLabel = "facture"
         local messageForEmitter = "Votre facture ~b~%s~s~ a été ~g~payée"
-        if invoice.kind == 'fine' then
-            kindLabel = 'amende'
+        if invoice.kind == "fine" then
+            kindLabel = "amende"
             messageForEmitter = "Votre amende ~b~%s~s~ a été ~r~payée par " .. Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname
         end
         TriggerClientEvent("soz-core:client:notification:draw", Player.PlayerData.source, "Vous avez ~g~payé~s~ votre " .. kindLabel, "success", 10000)
@@ -178,10 +178,10 @@ local function RejectInvoice(PlayerData, account, id)
 
     if PlayerData.charinfo.account == account then
         local Player = QBCore.Functions.GetPlayerByCitizenId(invoice.citizenid)
-        local kindLabel = 'facture'
+        local kindLabel = "facture"
         local messageForEmitter = "Votre facture ~b~%s~s~ a été ~r~refusée"
-        if invoice.kind == 'fine' then
-            kindLabel = 'amende'
+        if invoice.kind == "fine" then
+            kindLabel = "amende"
             messageForEmitter = "Votre amende ~b~%s~s~ a été ~r~refusée par " .. Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname
         end
         TriggerClientEvent("soz-core:client:notification:draw", Player.PlayerData.source, "Vous avez ~r~refusé~s~ votre " .. kindLabel, "error", 10000)
@@ -345,9 +345,9 @@ RegisterNetEvent("banking:server:sendInvoice", function(target, label, amount, k
 
     if exports["soz-inventory"]:RemoveItem(Player.PlayerData.source, "paper", 1) then
         if CreateInvoice(Player, Target, Player.PlayerData.job.id, Target.PlayerData.charinfo.account, label, tonumber(amount), kind) then
-            local kindLabel = 'facture'
-            if kind == 'fine' then
-                kindLabel = 'amende'
+            local kindLabel = "facture"
+            if kind == "fine" then
+                kindLabel = "amende"
             end
             TriggerClientEvent("soz-core:client:notification:draw", Player.PlayerData.source, "Votre " .. kindLabel .. " a bien été émise")
         end
