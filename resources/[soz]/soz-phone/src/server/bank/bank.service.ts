@@ -1,4 +1,4 @@
-import { BankEvents, BankTransaction, IBankCredentials } from '../../../typings/app/bank';
+import { BankTransaction, IBankCredentials } from '../../../typings/app/bank';
 import { PromiseEventResp, PromiseRequest } from '../lib/PromiseNetEvents/promise.types';
 import { bankLogger } from './bank.utils';
 import BankTransactionDB, { _BankTransactionDB } from './bank.db';

@@ -6,7 +6,6 @@ import { PrismaService } from '../database/prisma.service';
 import { ClientEvent } from '@public/shared/event';
 import { PlayerService } from '@public/server/player/player.service';
 import { PlayerData } from '@public/shared/player';
-import { formatISO } from 'date-fns';
 
 @Injectable()
 export class BankService {
