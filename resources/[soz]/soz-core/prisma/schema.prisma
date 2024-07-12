@@ -42,6 +42,19 @@ model bank_statements {
   @@index([gangid], map: "gangid")
 }
 
+model bank_transactions {
+  id                 BigInt   @id @default(autoincrement())
+  emitterAccount     String   @db.VarChar(50)
+  emitterName        String   @db.VarChar(50)
+  targetAccount      String   @db.VarChar(50)
+  targetName         String   @db.VarChar(50)
+  amount             BigInt   @default(0)
+  date               DateTime @default(now()) @db.Timestamp(0)
+
+  @@index([emitterAccount], map: "emitterAccount")
+  @@index([targetAccount], map: "targetAccount")
+}
+
 model bans {
   id       Int     @id @default(autoincrement())
   name     String? @db.VarChar(50)

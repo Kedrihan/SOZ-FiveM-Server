@@ -83,9 +83,9 @@ class _PlayerService {
         if (fetch) {
             const fetchResult: string | null = await this.playerDB
                 .fetchIdentifierFromPhoneNumber(phoneNumber)
-                .catch(e => {
+                .catch((e) => {
                     playerLogger.error(
-                        `Failed to fetch identifier from phone number for ${phoneNumber}, error: ${e.message}`
+                        `Failed to fetch identifier from phone number for ${phoneNumber}, error: ${e.message}`,
                     );
                     return null;
                 });
@@ -238,6 +238,24 @@ class _PlayerService {
     async handleUnloadPlayerEvent(src: number) {
         this.deletePlayerFromMaps(src);
         emitNet(PhoneEvents.SET_PLAYER_LOADED, src, false);
+    }
+
+    /**
+     * Return the attached identifier for a given account
+     * @param account The account to return identifier for
+     **/
+    async getIdentifierByBankAccount(account: string): Promise<string | null> {
+        // Whether we fetch from database if not found in online players
+        return await this.playerDB.fetchIdentifierFromBankAccount(account);
+    }
+
+    /**
+     * Return the character name for a given account
+     * @param account The account to return name for
+     **/
+    async getNameFromBankAccount(account: string): Promise<string | null> {
+        // Whether we fetch from database if not found in online players
+        return await this.playerDB.fetchNameFromBankAccount(account);
     }
 }
 

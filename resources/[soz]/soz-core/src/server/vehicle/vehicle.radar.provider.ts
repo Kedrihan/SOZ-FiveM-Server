@@ -49,7 +49,7 @@ export class VehicleRadarProvider {
         radarID: number,
         vehicleID: number,
         vehicleClass: number,
-        streetName: string
+        streetName: string,
     ) {
         const player = this.playerService.getPlayer(source);
         const radar = await this.radarRepository.find(radarID);
@@ -83,7 +83,7 @@ export class VehicleRadarProvider {
                     RadarMessage.FlashVehicle,
                     radarMessage + '~g~Véhicule autorisé~s~',
                     'CHAR_BLOCKED',
-                    'info'
+                    'info',
                 );
                 return;
             }
@@ -98,7 +98,7 @@ export class VehicleRadarProvider {
                 radarMessage =
                     radarMessage +
                     `Nouveau Record: ~b~${await this.playerService.getNameFromCitizenId(
-                        player.citizenid
+                        player.citizenid,
                     )}~s~ ~o~${vehicleSpeed}km/h~s~~n~`;
 
                 await this.prismaService.radar.update({
@@ -174,10 +174,11 @@ export class VehicleRadarProvider {
                     vehicle_model: vehicleModel,
                     vehicle_type: vehicleType,
                     position: vehiclePosition,
-                }
+                },
             );
 
             this.bankService.transferBankMoney(player.charinfo.account, JobType.Gouv, fine, true);
+            this.bankService.addBankTransaction(player.charinfo.account, JobType.Gouv, fine);
 
             this.notifier.advancedNotify(
                 source,
@@ -185,7 +186,7 @@ export class VehicleRadarProvider {
                 RadarMessage.FlashVehicle,
                 radarMessage,
                 'CHAR_BLOCKED',
-                'info'
+                'info',
             );
 
             this.notifier.advancedNotifyOnDutyWorkers(
@@ -195,7 +196,7 @@ export class VehicleRadarProvider {
                 'CHAR_BLOCKED',
                 'info',
                 FDO,
-                player => {
+                (player) => {
                     const currentVehicle = GetVehiclePedIsIn(GetPlayerPed(player.source), false);
                     if (currentVehicle && RadarInformedVehicle.includes(GetEntityModel(currentVehicle))) {
                         const ped = GetPlayerPed(player.source);
@@ -205,7 +206,7 @@ export class VehicleRadarProvider {
                         );
                     }
                     return false;
-                }
+                },
             );
         }
     }

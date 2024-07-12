@@ -1,5 +1,6 @@
 export enum ServerEvent {
     PHONE_APP_NEWS_CREATE_BROADCAST = 'phone:app:news:createNewsBroadcast',
+    PHONE_APP_BANK_TRANSACTION_CREATED = 'phone:app:bank:transactionCreated',
 
     ADMIN_RESET_HALLOWEEN = 'soz-core:server:admin:reset-halloween',
     ADMIN_ADD_MONEY = 'soz-core:server:admin:add-money',

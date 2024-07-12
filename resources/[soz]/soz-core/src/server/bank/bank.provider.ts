@@ -11,6 +11,7 @@ import { Notifier } from '../notifier';
 import { JobGradeRepository } from '../repository/job.grade.repository';
 import { ServerStateService } from '../server.state.service';
 import { BankService } from './bank.service';
+import { Exportable } from '@public/core/decorators/exports';
 
 const SENATOR_SALARY = 400;
 
@@ -118,5 +119,10 @@ export class BankProvider {
                 }
             }
         }
+    }
+
+    @Exportable('AddBankTransaction')
+    addBankTransaction(emitterAccount: string, targetAccount: string, amount: number) {
+        this.bankService.addBankTransaction(emitterAccount, targetAccount, amount);
     }
 }

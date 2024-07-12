@@ -79,10 +79,12 @@ QBCore.Functions.CreateCallback("banking:server:TransferMoney", function(source,
     local CurrentMoney = Player.Functions.GetMoney("money")
     amount = tonumber(amount)
 
-    if accountSource == "player" then
+    
+    if accountSource == "player" then --Dépot
         if amount <= CurrentMoney then
             if Player.Functions.RemoveMoney("money", amount) then
                 Account.AddMoney(accountTarget, amount)
+                exports["soz-core"]:AddBankTransaction(accountSource, accountTarget, amount)
 
                 exports["soz-core"]:Event("transfer_money", {
                     player_source = source,
@@ -94,11 +96,12 @@ QBCore.Functions.CreateCallback("banking:server:TransferMoney", function(source,
                 return
             end
         end
-    elseif accountTarget == "player" then
+    elseif accountTarget == "player" then --Retrait
         local AccountMoney = Account(accountSource).money
         if amount <= AccountMoney then
             if Player.Functions.AddMoney("money", amount) then
                 Account.RemoveMoney(accountSource, amount)
+                exports["soz-core"]:AddBankTransaction(accountSource, accountTarget, amount)
 
                 exports["soz-core"]:Event("transfer_money", {
                     player_source = source,
@@ -110,19 +113,22 @@ QBCore.Functions.CreateCallback("banking:server:TransferMoney", function(source,
                 return
             end
         end
-    else
+    else --Transfert entre 2 comptes
         Account.TransfertMoney(accountSource, accountTarget, amount, function(success, reason)
-            if success and sendNotificationToTarget then
-                local Target = QBCore.Functions.GetPlayerByBankAccount(accountTarget)
-                local SourceJob = exports["soz-core"]:GetJob(accountSource)
+            if success then
+                exports["soz-core"]:AddBankTransaction(accountSource, accountTarget, amount)
+                if sendNotificationToTarget then
+                    local Target = QBCore.Functions.GetPlayerByBankAccount(accountTarget)
+                    local SourceJob = exports["soz-core"]:GetJob(accountSource)
 
-                local Source = QBCore.Functions.GetPlayerByBankAccount(accountSource)
-                local origin = Source and (Source.PlayerData.charinfo.firstname .. " " .. Source.PlayerData.charinfo.lastname) or SourceJob.label
+                    local Source = QBCore.Functions.GetPlayerByBankAccount(accountSource)
+                    local origin = Source and (Source.PlayerData.charinfo.firstname .. " " .. Source.PlayerData.charinfo.lastname) or SourceJob.label
 
-                if Target then
-                    TriggerClientEvent("soz-core:client:notification:draw-advanced", Target.PlayerData.source, "Maze Banque", "Mouvement bancaire",
-                                       "Un virement de ~g~" .. amount .. "$~s~ de ~g~" .. origin .. "~s~ vient d'être versé sur votre compte",
-                                       "CHAR_BANK_MAZE")
+                    if Target then
+                        TriggerClientEvent("soz-core:client:notification:draw-advanced", Target.PlayerData.source, "Maze Banque", "Mouvement bancaire",
+                                           "Un versement vient d'être réalisé sur votre compte",
+                                           "CHAR_BANK_MAZE")
+                    end
                 end
             end
 

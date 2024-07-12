@@ -3,19 +3,26 @@ import { Invoice } from '@public/shared/bank';
 import { Err, Ok, Result } from '@public/shared/result';
 
 import { PrismaService } from '../database/prisma.service';
+import { ClientEvent } from '@public/shared/event';
+import { PlayerService } from '@public/server/player/player.service';
+import { PlayerData } from '@public/shared/player';
+import { formatISO } from 'date-fns';
 
 @Injectable()
 export class BankService {
     @Inject(PrismaService)
     private prismaService: PrismaService;
 
+    @Inject(PlayerService)
+    private playerService: PlayerService;
+
     public transferBankMoney(
         source: string,
         target: string,
         amount: number,
-        allowOverflow = false
+        allowOverflow = false,
     ): Promise<Result<boolean, string>> {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
             exports['soz-bank'].TransferMoney(
                 source,
                 target,
@@ -27,13 +34,13 @@ export class BankService {
                         resolve(Err(reason));
                     }
                 },
-                allowOverflow
+                allowOverflow,
             );
         });
     }
 
     public transferCashMoney(source: string, target: number, amount: number): Promise<Result<boolean, string>> {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
             exports['soz-bank'].TransferCashMoney(source, target, amount, (success, reason) => {
                 if (success) {
                     resolve(Ok(true));
@@ -48,7 +55,7 @@ export class BankService {
         account: any,
         amount: number,
         type: 'money' | 'marked_money' = 'money',
-        allowOverflow = false
+        allowOverflow = false,
     ): boolean {
         return exports['soz-bank'].AddAccountMoney(account, amount, type, allowOverflow);
     }
@@ -74,7 +81,7 @@ export class BankService {
         targetAccount: string,
         amount: number,
         type: 'money' | 'marked_money' = 'money',
-        allowOverflow = false
+        allowOverflow = false,
     ) {
         exports['soz-bank'].AddMoney(targetAccount, amount, type, allowOverflow);
     }
@@ -85,5 +92,45 @@ export class BankService {
 
     public getAccountMoney(accountName: string, type: 'money' | 'marked_money' = 'money'): number {
         return exports['soz-bank'].GetAccountMoney(accountName, type);
+    }
+
+    async addBankTransaction(emitterAccount: string, targetAccount: string, amount: number) {
+        const target = this.playerService.getPlayerByBankAccount(targetAccount);
+        const emitter = this.playerService.getPlayerByBankAccount(emitterAccount);
+        const targetNames: { [key: string]: string } = {
+            player: "Retrait d'argent",
+            gouv: 'Radar',
+        };
+
+        const targetName = targetNames[targetAccount] || target.charinfo.firstname + ' ' + target.charinfo.lastname;
+
+        const emitterName =
+            emitterAccount == 'player'
+                ? "Dépôt d'argent"
+                : emitter.charinfo.firstname + ' ' + emitter.charinfo.lastname;
+        const transaction = await this.prismaService.bank_transactions.create({
+            data: {
+                amount,
+                emitterAccount,
+                emitterName,
+                targetAccount,
+                targetName,
+            },
+        });
+        this.sendTransactionToPhone(transaction, emitter);
+        this.sendTransactionToPhone(transaction, target);
+    }
+
+    private sendTransactionToPhone(transaction: any, player: PlayerData | null) {
+        if (player) {
+            TriggerClientEvent(ClientEvent.PHONE_APP_BANK_TRANSACTION_CREATED, player.source, {
+                emitterAccount: transaction.emitterAccount,
+                emitterName: transaction.emitterName,
+                targetAccount: transaction.targetAccount,
+                targetName: transaction.targetName,
+                amount: Number(transaction.amount),
+                date: transaction.date.getTime(),
+            });
+        }
     }
 }

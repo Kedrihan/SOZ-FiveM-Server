@@ -48,6 +48,10 @@ export class QBCore {
         return this.QBCore.Functions.GetPlayerByPhone(phone);
     }
 
+    public getPlayerByBankAccount(account: string): QBCorePlayer | null {
+        return this.QBCore.Functions.GetPlayerByBankAccount(account);
+    }
+
     public getPlayer(source: number): QBCorePlayer {
         return this.QBCore.Functions.GetPlayer(source);
     }

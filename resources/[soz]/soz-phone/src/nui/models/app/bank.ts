@@ -1,5 +1,5 @@
 import { createModel } from '@rematch/core';
-import { BankEvents, IBankCredentials } from '@typings/app/bank';
+import { BankEvents, BankTransaction, IBankCredentials } from '@typings/app/bank';
 
 import { ServerPromiseResp } from '../../../../typings/common';
 import { MockBankAccountData } from '../../apps/bank/utils/constants';
@@ -14,7 +14,7 @@ export const appBank = createModel<RootModel>()({
             return { ...state, ...payload };
         },
     },
-    effects: dispatch => ({
+    effects: (dispatch) => ({
         async setCredentials(payload: IBankCredentials) {
             dispatch.appBank.set(payload);
         },
@@ -22,9 +22,9 @@ export const appBank = createModel<RootModel>()({
             fetchNui<ServerPromiseResp<IBankCredentials>>(
                 BankEvents.FIVEM_EVENT_FETCH_BALANCE,
                 undefined,
-                buildRespObj(MockBankAccountData)
+                buildRespObj(MockBankAccountData),
             )
-                .then(credential => {
+                .then((credential) => {
                     dispatch.appBank.set(credential.data || null);
                 })
                 .catch(() => console.error('Failed to load bank data'));

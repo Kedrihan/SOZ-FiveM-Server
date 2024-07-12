@@ -325,4 +325,5 @@ export enum ClientEvent {
     VANDALISM_UPDATE_PROP = 'soz-core:client:vandalism:update-prop',
 
     ANIMATION_FX = 'soz-core:client:animation:fx',
+    PHONE_APP_BANK_TRANSACTION_CREATED = 'phone:app:bank:transactionCreated',
 }
