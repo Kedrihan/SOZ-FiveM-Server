@@ -16,10 +16,3 @@ onNetPromise<string, BankTransaction[]>(BankEvents.FIVEM_EVENT_FETCH_TRANSACTION
         resp({ status: 'error', errorMsg: 'UNKNOWN_ERROR' });
     });
 });
-
-/*onNetPromise<BankTransaction, void>(BankEvents.FIVEM_EVENT_TRANSACTION_CREATED, (reqObj, resp) => {
-    BankService.handleNewTransaction(reqObj, resp).catch((e) => {
-        bankLogger.error(`Error occured in new transaction event (${reqObj.source}), Error:  ${e.message}`);
-        resp({ status: 'error', errorMsg: 'UNKNOWN_ERROR' });
-    });
-});*/
