@@ -8,6 +8,7 @@ export const MockBankAccountData: IBankCredentials = {
 
 export const MockBankTransactionsData: BankTransaction[] = [
     {
+        id: 1,
         date: 1598400000000,
         amount: BigInt(500),
         emitterName: 'John Doe',
@@ -16,27 +17,12 @@ export const MockBankTransactionsData: BankTransaction[] = [
         targetAccount: 'AAA',
     },
     {
+        id: 2,
         date: 1598600000000,
         amount: BigInt(1500),
         emitterName: '',
         targetName: 'John Doe',
         emitterAccount: 'radar',
         targetAccount: 'BBB',
-    },
-    {
-        date: 1598650000000,
-        amount: BigInt(1500),
-        emitterName: '',
-        targetName: 'John Doe',
-        emitterAccount: 'bank_pacific',
-        targetAccount: 'BBB',
-    },
-    {
-        date: 1598680000000,
-        amount: BigInt(1500),
-        emitterName: 'John Doe',
-        targetName: '',
-        emitterAccount: 'BBB',
-        targetAccount: 'bank_pacific',
     },
 ];
