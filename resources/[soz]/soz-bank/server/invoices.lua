@@ -103,7 +103,7 @@ local function PayInvoice(PlayerData, account, id, marked)
         local messageForEmitter = "Votre facture ~b~%s~s~ a été ~g~payée"
         if invoice.kind == "fine" then
             kindLabel = "amende"
-            messageForEmitter = "Votre amende ~b~%s~s~ a été ~r~payée par " .. Player.PlayerData.charinfo.firstname .. " " .. 
+            messageForEmitter = "Votre amende ~b~%s~s~ a été ~r~payée par " .. Player.PlayerData.charinfo.firstname .. " " ..
                                     Player.PlayerData.charinfo.lastname
         end
         TriggerClientEvent("soz-core:client:notification:draw", Player.PlayerData.source, "Vous avez ~g~payé~s~ votre " .. kindLabel, "success", 10000)
@@ -182,7 +182,7 @@ local function RejectInvoice(PlayerData, account, id)
         local messageForEmitter = "Votre facture ~b~%s~s~ a été ~r~refusée"
         if invoice.kind == "fine" then
             kindLabel = "amende"
-            messageForEmitter = "Votre amende ~b~%s~s~ a été ~r~refusée par " .. Player.PlayerData.charinfo.firstname .. " " .. 
+            messageForEmitter = "Votre amende ~b~%s~s~ a été ~r~refusée par " .. Player.PlayerData.charinfo.firstname .. " " ..
                                     Player.PlayerData.charinfo.lastname
         end
         TriggerClientEvent("soz-core:client:notification:draw", Player.PlayerData.source, "Vous avez ~r~refusé~s~ votre " .. kindLabel, "error", 10000)
