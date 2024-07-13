@@ -123,6 +123,7 @@ export class BankService {
     private sendTransactionToPhone(transaction: any, player: PlayerData | null) {
         if (player) {
             TriggerClientEvent(ClientEvent.PHONE_APP_BANK_TRANSACTION_CREATED, player.source, {
+                id: Number(transaction.id),
                 emitterAccount: transaction.emitterAccount,
                 emitterName: transaction.emitterName,
                 targetAccount: transaction.targetAccount,

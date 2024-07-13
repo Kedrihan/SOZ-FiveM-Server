@@ -79,8 +79,7 @@ QBCore.Functions.CreateCallback("banking:server:TransferMoney", function(source,
     local CurrentMoney = Player.Functions.GetMoney("money")
     amount = tonumber(amount)
 
-    
-    if accountSource == "player" then --Dépot
+    if accountSource == "player" then -- Dépot
         if amount <= CurrentMoney then
             if Player.Functions.RemoveMoney("money", amount) then
                 Account.AddMoney(accountTarget, amount)
@@ -96,7 +95,7 @@ QBCore.Functions.CreateCallback("banking:server:TransferMoney", function(source,
                 return
             end
         end
-    elseif accountTarget == "player" then --Retrait
+    elseif accountTarget == "player" then -- Retrait
         local AccountMoney = Account(accountSource).money
         if amount <= AccountMoney then
             if Player.Functions.AddMoney("money", amount) then
@@ -113,7 +112,7 @@ QBCore.Functions.CreateCallback("banking:server:TransferMoney", function(source,
                 return
             end
         end
-    else --Transfert entre 2 comptes
+    else -- Transfert entre 2 comptes
         Account.TransfertMoney(accountSource, accountTarget, amount, function(success, reason)
             if success then
                 exports["soz-core"]:AddBankTransaction(accountSource, accountTarget, amount)
@@ -126,8 +125,7 @@ QBCore.Functions.CreateCallback("banking:server:TransferMoney", function(source,
 
                     if Target then
                         TriggerClientEvent("soz-core:client:notification:draw-advanced", Target.PlayerData.source, "Maze Banque", "Mouvement bancaire",
-                                           "Un versement vient d'être réalisé sur votre compte",
-                                           "CHAR_BANK_MAZE")
+                                           "Un versement vient d'être réalisé sur votre compte", "CHAR_BANK_MAZE")
                     end
                 end
             end

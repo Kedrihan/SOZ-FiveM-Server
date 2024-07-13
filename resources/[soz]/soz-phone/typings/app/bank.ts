@@ -4,6 +4,7 @@ export interface IBankCredentials {
     balance: number;
 }
 export interface BankTransaction {
+    id: number,
     amount: bigint;
     emitterAccount: string;
     targetAccount: string;
