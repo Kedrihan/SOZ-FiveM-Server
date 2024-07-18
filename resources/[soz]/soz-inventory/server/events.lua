@@ -66,14 +66,16 @@ QBCore.Functions.CreateCallback("inventory:server:TransfertItem",
             local coord2 = GetEntityCoords(GetPlayerPed(targetInv.id))
 
             if (#(coord1 - coord2) > 10) then
-                exports["soz-core"]:Report(source, "Vol de d'objet", targetInv.owner, item .. " " .. amount, {
+                exports["soz-core"]:Report(source, "Vol de l'objet", targetInv.owner, item .. " " .. amount, {
                     coord1.x,
                     coord1.y,
                     coord1.z,
                 });
             end
-            TriggerClientEvent("soz-core:client:notification:draw", sourceInv.id,
+            if sourceInv.id ~= targetInv.id then
+                TriggerClientEvent("soz-core:client:notification:draw", sourceInv.id,
                                 string.format("On vous a pris ~r~%s %s", amount, QBCore.Shared.Items[item].label))
+            end
         end
 
         local sourceInventory = sourceInv
