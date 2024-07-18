@@ -74,7 +74,7 @@ QBCore.Functions.CreateCallback("inventory:server:TransfertItem",
             end
             if sourceInv.id ~= targetInv.id then
                 TriggerClientEvent("soz-core:client:notification:draw", sourceInv.id,
-                                string.format("On vous a pris ~r~%s %s", amount, QBCore.Shared.Items[item].label))
+                                   string.format("On vous a pris ~r~%s %s", amount, QBCore.Shared.Items[item].label))
             end
         end
 
