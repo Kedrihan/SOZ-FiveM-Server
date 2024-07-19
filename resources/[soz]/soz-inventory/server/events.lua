@@ -56,7 +56,7 @@ RegisterServerEvent("inventory:server:bin-vandalism", function(invID, ctx)
 end)
 
 QBCore.Functions.CreateCallback("inventory:server:TransfertItem",
-                                function(source, cb, inventorySource, inventoryTarget, item, amount, metadata, slot, targetSlot, manualFilter)
+                                function(source, cb, inventorySource, inventoryTarget, item, amount, metadata, slot, targetSlot, manualFilter, inverse)
     Inventory.TransfertItem(source, inventorySource, inventoryTarget, item, amount, metadata, slot, function(success, reason)
         local sourceInv = Inventory(inventorySource)
         local targetInv = Inventory(inventoryTarget)
@@ -72,7 +72,7 @@ QBCore.Functions.CreateCallback("inventory:server:TransfertItem",
                     coord1.z,
                 });
             end
-            if sourceInv.id ~= targetInv.id then
+            if sourceInv.id ~= targetInv.id and tonumber(source) ~= tonumber(sourceInv.id) then
                 TriggerClientEvent("soz-core:client:notification:draw", sourceInv.id,
                                    string.format("On vous a pris ~r~%s %s", amount, QBCore.Shared.Items[item].label))
             end
