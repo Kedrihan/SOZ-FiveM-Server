@@ -56,7 +56,7 @@ RegisterServerEvent("inventory:server:bin-vandalism", function(invID, ctx)
 end)
 
 QBCore.Functions.CreateCallback("inventory:server:TransfertItem",
-                                function(source, cb, inventorySource, inventoryTarget, item, amount, metadata, slot, targetSlot, manualFilter, inverse)
+                                function(source, cb, inventorySource, inventoryTarget, item, amount, metadata, slot, targetSlot, manualFilter)
     Inventory.TransfertItem(source, inventorySource, inventoryTarget, item, amount, metadata, slot, function(success, reason)
         local sourceInv = Inventory(inventorySource)
         local targetInv = Inventory(inventoryTarget)
