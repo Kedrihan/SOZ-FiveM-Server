@@ -35,6 +35,7 @@ import { HousingRepository } from '../repository/housing.repository';
 import { TargetFactory } from '../target/target.factory';
 import { VehicleGarageProvider } from '../vehicle/vehicle.garage.provider';
 import { HousingMenuProvider } from './housing.menu.provider';
+import { InputService } from '../nui/input.service';
 
 const BlipSprite = {
     house: {
@@ -72,6 +73,9 @@ export class HousingPropertyZoneProvider {
 
     @Inject(BlipFactory)
     private blipFactory: BlipFactory;
+
+    @Inject(InputService)
+    private inputService: InputService;
 
     private temporaryAccess = new Set<number>();
 
@@ -588,8 +592,14 @@ export class HousingPropertyZoneProvider {
 
             return;
         }
+        const value = await this.inputService.askInput({
+            title: 'Voulez-vous vraiment expulser votre colocataire ? (Tapez "oui" pour confirmer)',
+            maxCharacters: 3,
+        });
 
-        await this.housingMenuProvider.removeRoommate({ apartmentId: apartments[0].id, propertyId: property.id });
+        if (value && value.toLowerCase() === 'oui') {
+            await this.housingMenuProvider.removeRoommate({ apartmentId: apartments[0].id, propertyId: property.id });
+        }
     }
 
     private getUniqueApartment(property: Property): Apartment | null {
@@ -618,7 +628,7 @@ export class HousingPropertyZoneProvider {
         await this.vehicleGarageProvider.openHouseGarageMenu(property.identifier, apartments);
     }
 
-    public leavePropertyAsRoommate(property: Property) {
+    public async leavePropertyAsRoommate(property: Property) {
         const player = this.playerService.getPlayer();
 
         if (!player) {
@@ -630,7 +640,13 @@ export class HousingPropertyZoneProvider {
         if (!apartment) {
             return;
         }
+        const value = await this.inputService.askInput({
+            title: 'Voulez-vous vraiment partir de la colocation ? (Tapez "oui" pour confirmer)',
+            maxCharacters: 3,
+        });
 
-        TriggerServerEvent(ServerEvent.HOUSING_REMOVE_ROOMMATE, property.id, apartment.id);
+        if (value && value.toLowerCase() === 'oui') {
+            TriggerServerEvent(ServerEvent.HOUSING_REMOVE_ROOMMATE, property.id, apartment.id);
+        }
     }
 }
