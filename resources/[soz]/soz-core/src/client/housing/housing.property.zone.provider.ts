@@ -592,12 +592,11 @@ export class HousingPropertyZoneProvider {
 
             return;
         }
-        const value = await this.inputService.askInput({
-            title: 'Voulez-vous vraiment expulser votre colocataire ? (Tapez "oui" pour confirmer)',
-            maxCharacters: 3,
-        });
+        const confirm = await this.inputService.askConfirm(
+            'Voulez-vous vraiment expulser votre colocataire ? Entrez OUI pour confirmer.'
+        );
 
-        if (value && value.toLowerCase() === 'oui') {
+        if (confirm) {
             await this.housingMenuProvider.removeRoommate({ apartmentId: apartments[0].id, propertyId: property.id });
         }
     }
@@ -640,12 +639,11 @@ export class HousingPropertyZoneProvider {
         if (!apartment) {
             return;
         }
-        const value = await this.inputService.askInput({
-            title: 'Voulez-vous vraiment partir de la colocation ? (Tapez "oui" pour confirmer)',
-            maxCharacters: 3,
-        });
+        const confirm = await this.inputService.askConfirm(
+            'Voulez-vous vraiment quitter la colocation ? Entrez OUI pour confirmer.'
+        );
 
-        if (value && value.toLowerCase() === 'oui') {
+        if (confirm) {
             TriggerServerEvent(ServerEvent.HOUSING_REMOVE_ROOMMATE, property.id, apartment.id);
         }
     }
