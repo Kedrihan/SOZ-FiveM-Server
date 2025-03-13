@@ -148,7 +148,7 @@ export const HOUSE_FRIDGE_TIER_WEIGHTS = {
 
 export const INVENTORY_CONFIGURATIONS: Partial<Record<InventoryType, Partial<InventoryConfiguration>>> = {
     [InventoryType.Player]: {
-        maxWeight: 25000,
+        maxWeight: 25000000,
     },
     [InventoryType.Ammo]: {
         maxWeight: 10000000,
