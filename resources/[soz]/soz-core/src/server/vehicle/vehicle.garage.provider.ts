@@ -1066,44 +1066,6 @@ export class VehicleGarageProvider {
         );
     }
 
-    @Tick(TickInterval.EVERY_MINUTE, 'soft-pound-check')
-    public async loop() {
-        const softVehicles = await this.prismaService.playerVehicle.findMany({
-            where: { state: PlayerVehicleState.InSoftPound },
-        });
-
-        const timestamp = Math.floor(Date.now() / 1000);
-
-        const loseLifeDelay = 3600;
-        let waitTime = loseLifeDelay;
-        for (const veh of softVehicles) {
-            const delta = timestamp - (veh.parkingtime + loseLifeDelay);
-            if (delta > 0) {
-                const newState = veh.life_counter == 0 ? PlayerVehicleState.Missing : PlayerVehicleState.InPound;
-                await this.prismaService.playerVehicle.update({
-                    where: { id: veh.id },
-                    data: {
-                        state: newState,
-                        life_counter: {
-                            decrement: 1,
-                        },
-                    },
-                });
-                this.monitor.traceEvent('vehicle_softpound_lifelost', {
-                    player_source: source,
-                    vehicle_plate: veh.plate,
-                    vehicle_life_count_before: veh.life_counter,
-                    vehicle_life_count_after: veh.life_counter - 1,
-                    vehicle_state: newState,
-                });
-            } else {
-                waitTime = Math.min(waitTime, -delta);
-            }
-        }
-
-        await wait(waitTime * 1000);
-    }
-
     private async getCitizenIdsForGarage(player: PlayerData, garage: Garage, propertyId: string): Promise<Set<string>> {
         const citizenIds = new Set<string>();
 
