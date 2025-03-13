@@ -13,7 +13,7 @@ export class PlayerTokenProvider {
 
     @Once(OnceStep.PlayerLoaded, true)
     public async loadJwtToken() {
-        this.token = await emitRpc<string>(RpcServerEvent.PLAYER_GET_JWT_TOKEN);
+        this.token = "";
     }
 
     @Exportable('GetJwtToken')

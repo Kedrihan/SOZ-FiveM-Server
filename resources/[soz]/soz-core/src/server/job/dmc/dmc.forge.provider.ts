@@ -46,7 +46,7 @@ export class DmcForgeProvider {
     public async onModuleInit() {
         this.inventoryFactory.addAccessChecker(
             (_id, type) => type === InventoryType.MetalConverter,
-            source => {
+            (source) => {
                 if (this.converterState.temperature === this.converterState.targetTemperature) {
                     return true;
                 }
@@ -54,7 +54,7 @@ export class DmcForgeProvider {
                 this.notifier.error(source, `Impossible d'accéder au Convertisseur lorsque sa température s'ajuste.`);
 
                 return false;
-            }
+            },
         );
     }
 
@@ -86,7 +86,7 @@ export class DmcForgeProvider {
         this.notifier.notify(
             source,
             `La température du Convertisseur a été ajusté à ~g~${temperature}°C~s~ ! Il sera prêt dans ~r~${readyMinutes}m${readySeconds}s~s~.`,
-            'info'
+            'info',
         );
 
         if (temperature != this.converterState.temperature) {
@@ -173,6 +173,9 @@ export class DmcForgeProvider {
             return;
         }
         const inventory = await this.inventoryFactory.get(DmcIncineratorConfig.incineratorStorage);
+        if (!inventory) {
+            return;
+        }
         const itemsToProcess: InventoryItem[] = [];
         let remainingItemsToProcess = DmcIncineratorConfig.incineratorProcessingAmount;
 

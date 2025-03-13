@@ -169,45 +169,8 @@ export class VehicleCustomProvider {
 
     public async upgradeVehicle(vehicleEntityId: number, mode: LSCustomMode) {
         const options = this.vehicleModificationService.createOptions(vehicleEntityId);
-        const vehicle = this.vehicleRepository.getByModelHash(GetEntityModel(vehicleEntityId));
 
-        if (!vehicle || !vehicle.price) {
-            this.notifier.notify(
-                "Ce véhicule n'est pas enregistré auprès des autorités et ne peut donc pas être modifié, veuillez prendre contact avec les autorités.",
-                'error'
-            );
-
-            return;
-        }
-
-        if (mode === LSCustomMode.LsCustom) {
-            const volatile = await this.vehicleStateService.getVehicleState(vehicleEntityId);
-            if (volatile.isCrimiImport) {
-                this.notifier.notify("Ce véhicule ne vient pas d'un ~r~concessionnaire agréé~s~.", 'error');
-                return;
-            }
-        }
-
-        const vehicleCondition = await this.vehicleStateService.getVehicleCondition(vehicleEntityId);
-
-        if (this.vehicleService.isInBadCondition(vehicleEntityId, vehicleCondition)) {
-            this.notifier.notify(
-                'Ce véhicule est trop endommagé pour être modifié, veuillez le réparer avant de le modifier.',
-                'error'
-            );
-
-            return;
-        }
-
-        if (vehicleCondition.dirtLevel > 5.0) {
-            this.notifier.notify(
-                'Ce véhicule est trop sale pour être modifié, veuillez le laver avant de le modifier.',
-                'error'
-            );
-
-            return;
-        }
-
+        
         const advancedFlag = isVehicleModelElectric(GetEntityModel(vehicleEntityId))
             ? 0
             : GetVehicleHandlingInt(vehicleEntityId, 'CCarHandlingData', 'strAdvancedFlags');
@@ -218,7 +181,7 @@ export class VehicleCustomProvider {
 
         this.nuiMenu.openMenu(MenuType.VehicleCustom, {
             vehicle: vehicleEntityId,
-            vehiclePrice: vehicle.price,
+            vehiclePrice: 0,
             options,
             originalConfiguration: { ...vehicleConfiguration },
             currentConfiguration: vehicleConfiguration,

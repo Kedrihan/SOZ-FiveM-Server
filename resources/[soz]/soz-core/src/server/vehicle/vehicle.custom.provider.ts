@@ -60,7 +60,7 @@ export class VehicleCustomProvider {
         crimiPrice: Record<string, number>
     ) {
         const state = this.vehicleStateService.getVehicleState(vehicleNetworkId);
-        const taxedPrice = await this.priceService.getPrice(price ?? 0, TaxType.VEHICLE);
+        const taxedPrice = 0;
 
         const playerVehicle = state.volatile.isPlayerVehicle;
         const inventory = await this.inventoryFactory.getPlayerInventory(source);
@@ -140,7 +140,7 @@ export class VehicleCustomProvider {
         }
 
         if (taxedPrice && mode == LSCustomMode.LsCustom) {
-            this.notifier.notify(source, `Vous avez payé $${taxedPrice.toFixed(0)} pour modifier votre véhicule.`);
+            this.notifier.notify(source, `Vous avez payé $${taxedPrice} pour modifier votre véhicule.`);
         } else if (notify) {
             this.notifier.notify(source, 'Le véhicule a été modifié');
         }
