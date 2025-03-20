@@ -176,6 +176,7 @@ export class DmcForgeProvider {
         if (!inventory) {
             return;
         }
+
         const itemsToProcess: InventoryItem[] = [];
         let remainingItemsToProcess = DmcIncineratorConfig.incineratorProcessingAmount;
 
